@@ -4,14 +4,12 @@
 
 This package provides you access to DBnomics data series. DBnomics is an open-source project with the goal of aggregating the world's economic data in one location, free of charge to the public. DBnomics covers hundreds of millions of series from international and national institutions (Eurostat, World Bank, IMF, ...).
 
-To use this package, you have to provide the codes of the provider, dataset and series you want. You can retrieve them directly on the <a href="https://db.nomics.world/" target="_blank">website</a>. You have access to the API through this <a href="http://api.db.nomics.world/" target="_blank">link</a> and the documentation is <a href="https://api.db.nomics.world/apidocs" target="_blank">here</a>.
+To use this package, you have to provide the codes of the provider, dataset and series you want. You can retrieve them directly on the <a href="https://db.nomics.world/" target="_blank">website</a>.
 
-DBnomics is hosted on its own <a href="https://git.nomics.world/" target="_blank">gitlab platform</a>. However, in order to install the package more easily, we created a mirror of this package on <a href="https://github.com/dbnomics/DBnomics" target="_blank">github</a>.
-
-To install `DBnomics.jl` :
+To install `DBnomics.jl`, go to the package manager with `]` :
 
 ```julia
-Pkg.add("DBnomics")
+add https://github.com/s915/DBnomics.jl
 ```
 
 ## Examples
@@ -69,7 +67,7 @@ df2 = rdb("AMECO", "ZUTN", dimensions = """{"geo": ["ea12", "dnk"]}""");
 # Fetch several values of several dimensions from dataset 'Doing business' (DB) of World Bank :
 df3 = rdb("WB", "DB", dimensions = Dict(:country => ["DZ", "PE"], :indicator => ["ENF.CONT.COEN.COST.ZS", "IC.REG.COST.PC.FE.ZS"]));
 # or
-df3 = rdb("WB", "DB", dimensions = """{"country": ["DZ", "PE"], "indicator": ["ENF.CONT.COEN.COST.ZS", "IC.REG.COST.PC.FE.ZS"]}""");
+df3 = rdb("WB", "DB", dimensions = (country = ["DZ", "PE"], indicator = ["ENF.CONT.COEN.COST.ZS", "IC.REG.COST.PC.FE.ZS"]));
 ```
 
 Fetch one series from the dataset 'Doing Business' of WB provider with the link :
@@ -112,7 +110,7 @@ df1 <- rdb(ids = 'AMECO/ZUTN/EA19.1.0.0.0.ZUTN', curl_config = h)
 ```
 
 ### Use the standard functions `readlines` and `download`
-To retrieve the data **DBnomics** can use the standard functions `readlines` and `download`.
+To retrieve the data **DBnomics** can also use the standard functions `readlines` and `download`.
 
 #### Set the connection up for a session
 To activate this feature for a session, you need to enable an option of the package :
