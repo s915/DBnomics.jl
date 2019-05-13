@@ -15,7 +15,7 @@ function printDT(x::DataFrames.DataFrame, n::Union{Nothing, Int64} = nothing)
             showall(x)
         end
 
-        deletecols!(x, :_row_)
+        df_delete_col!(x, :_row_)
         nothing
     else
         # y = [first(x, 5); last(x, 5)]

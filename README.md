@@ -47,7 +47,7 @@ df4 = rdb("IMF", "CPI", mask = "M..PCPIEC_IX+PCPIA_IX");
 
 In the event that you only use the arguments `provider_code`, `dataset_code` and `mask`, you can drop the name `mask` and run :
 ```julia
-df = rdb("IMF", "CPI", "M.DE.PCPIEC_WT");
+df1 = rdb("IMF", "CPI", "M.DE.PCPIEC_WT");
 ```
 
 Fetch time series by `dimensions` :

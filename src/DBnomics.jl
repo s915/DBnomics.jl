@@ -77,6 +77,17 @@ module DBnomics
         end
     end
 
+    # df_delete_col
+    if version7
+        function df_delete_col!(x::DataFrames.DataFrame, y)
+            delete!(x, y)
+        end
+    else
+        function df_delete_col!(x::DataFrames.DataFrame, y)
+            deletecols!(x, y)
+        end
+    end
+
     #---------------------------------------------------------------------------
     # Global variables.
     # API version
