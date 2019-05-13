@@ -12,4 +12,4 @@ JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 TimeZones = "f269a46b-ccf7-5d73-abea-4c690281aa53"
 
 [compat]
-julia = "0.6.4"
+julia = "0.6,0.7,1"
