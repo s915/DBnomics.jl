@@ -32,9 +32,9 @@ julia> rdb_last_updates(true)
 
 julia> rdb_last_updates(use_readlines = true)
 
-julia> rdb_last_updates(curl_config = Dict("proxy" => "http://<proxy>:<proxyport>"))
+julia> rdb_last_updates(curl_config = Dict(:proxy => "<proxy>"))
 
-julia> rdb_last_updates(proxy = "http://<proxy>:<proxyport>")
+julia> rdb_last_updates(proxy = "<proxy>")
 ```
 """
 function rdb_last_updates(

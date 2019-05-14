@@ -32,9 +32,9 @@ julia> rdb_providers(true)
 
 julia> rdb_providers(use_readlines = true)
 
-julia> rdb_providers(curl_config = Dict("proxy" => "http://<proxy>:<proxyport>"))
+julia> rdb_providers(curl_config = Dict(:proxy => "<proxy>"))
 
-julia> rdb_providers(proxy = "http://<proxy>:<proxyport>")
+julia> rdb_providers(proxy = "<proxy>")
 ```
 """
 function rdb_providers(

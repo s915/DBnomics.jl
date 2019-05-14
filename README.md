@@ -1,6 +1,6 @@
 # DBnomics.jl
 
-## DBnomics Julia client (Julia &ge; 0.6.4)
+## DBnomics Julia client (Julia version &ge; 0.6.4)
 
 This package provides you access to DBnomics data series. DBnomics is an open-source project with the goal of aggregating the world's economic data in one location, free of charge to the public. DBnomics covers hundreds of millions of series from international and national institutions (Eurostat, World Bank, IMF, ...).
 
@@ -11,6 +11,10 @@ To install `DBnomics.jl`, go to the package manager with `]` :
 ```julia
 add https://github.com/s915/DBnomics.jl
 ```
+
+:warning: If your version of Julia is less than 0.7.0 then the packages
+**Missings** and **NamedTuples** are needed. They don't appear in the REQUIRE
+file but an error message will come up if these packages aren't installed.
 
 ## Examples
 Fetch time series by `ids` :
@@ -62,6 +66,8 @@ df1 = rdb("AMECO", "ZUTN", dimensions = """{"geo": ["ea19"]}""");
 # Fetch two values of one dimension from dataset 'Unemployment rate' (ZUTN) of AMECO provider :
 df2 = rdb("AMECO", "ZUTN", dimensions = Dict(:geo => ["ea12", "dnk"]));
 # or
+df2 = rdb("AMECO", "ZUTN", dimensions = (geo = ["ea12", "dnk"],));
+# or
 df2 = rdb("AMECO", "ZUTN", dimensions = """{"geo": ["ea12", "dnk"]}""");
 
 # Fetch several values of several dimensions from dataset 'Doing business' (DB) of World Bank :
@@ -106,7 +112,7 @@ DBnomics.options("curl_config", nothing);
 #### Use the connection only for a function call
 If a complete configuration is not needed but just an "on the fly" execution, then use the argument `curl_config` of the functions `rdb` and `rdb_...` :
 ```julia
-df1 <- rdb(ids = 'AMECO/ZUTN/EA19.1.0.0.0.ZUTN', curl_config = h)
+df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN", curl_config = h);
 ```
 
 ### Use the standard functions `readlines` and `download`
@@ -133,4 +139,4 @@ df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN", use_readlines = true);
 ```
 
 ## P.S.
-Visit <a href="https://db.nomics.world/" target="_blank">https://db.nomics.world/</a> !
+Visit <a href="https://db.nomics.world/" target="_blank">https://db.nomics.world/</a> :bar_chart: !

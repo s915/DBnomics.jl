@@ -45,6 +45,7 @@ the arguments names can be dropped. The `mask` will be passed through `mask_arg`
 
 # Examples
 ```jldoctest
+## By ids
 julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN");
 # or
 julia> df1 = rdb("AMECO/ZUTN/EA19.1.0.0.0.ZUTN");
@@ -54,21 +55,30 @@ julia> df2 = rdb(ids = ["AMECO/ZUTN/EA19.1.0.0.0.ZUTN", "AMECO/ZUTN/DNK.1.0.0.0.
 julia> df3 = rdb(ids = ["AMECO/ZUTN/EA19.1.0.0.0.ZUTN", "IMF/CPI/A.AT.PCPIT_IX"]);
 
 
-julia> df1 = rdb("AMECO", "ZUTN", dimensions = Dict(:geo => ["ea12"]));
+## By dimensions
+julia> df1 = rdb("AMECO", "ZUTN", dimensions = Dict(:geo => "ea12"));
+# or
+julia> df1 = rdb("AMECO", "ZUTN", dimensions = (geo = "ea12",));
 # or
 julia> df1 = rdb("AMECO", "ZUTN", dimensions = \"""{"geo": ["ea19"]}\""");
 
 julia> df2 = rdb("AMECO", "ZUTN", dimensions = Dict(:geo => ["ea12", "dnk"]))
+# or
+julia> df2 = rdb("AMECO", "ZUTN", dimensions = (geo = ["ea12", "dnk"],))
 # or
 julia> df2 = rdb("AMECO", "ZUTN", dimensions = \"""{"geo": ["ea12", "dnk"]}\""")
 
 julia> dim = Dict(:country => ["DZ", "PE"], :indicator => ["ENF.CONT.COEN.COST.ZS", "IC.REG.COST.PC.FE.ZS"]);
 julia> df3 = rdb("WB", "DB", dimensions = dim);
 # or
+julia> dim = (country = ["DZ", "PE"], indicator = ["ENF.CONT.COEN.COST.ZS", "IC.REG.COST.PC.FE.ZS"]);
+julia> df3 = rdb("WB", "DB", dimensions = dim);
+# or
 julia> dim = \"""{"country": ["DZ", "PE"], "indicator": ["ENF.CONT.COEN.COST.ZS", "IC.REG.COST.PC.FE.ZS"]}\""";
 julia> df3 = rdb("WB", "DB", dimensions = dim);
 
 
+## By mask
 julia> df1 = rdb("IMF", "CPI", mask = "M.DE.PCPIEC_WT");
 # or
 julia> df1 = rdb("IMF", "CPI", "M.DE.PCPIEC_WT");
@@ -78,6 +88,22 @@ julia> df2 = rdb("IMF", "CPI", mask = "M.DE+FR.PCPIEC_WT");
 julia> df3 = rdb("IMF", "CPI", mask = "M..PCPIEC_WT");
 
 julia> df4 = rdb("IMF", "CPI", mask = "M..PCPIEC_IX+PCPIA_IX");
+
+
+## Use proxy with curl
+julia> h = Dict(:proxy => "<proxy>", :proxyport => <port>, :proxyusername => "<username>", :proxypassword => "<password>");
+
+julia> DBnomics.options("curl_config", h);
+julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN");
+# or
+julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN", curl_config = h)
+
+
+## Use readlines and download
+julia> DBnomics.options("use_readlines", true);
+julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN");
+# or
+julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN", use_readlines = true);
 ```
 """
 function rdb(
