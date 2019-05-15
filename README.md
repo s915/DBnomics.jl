@@ -9,12 +9,18 @@ To use this package, you have to provide the codes of the provider, dataset and 
 To install `DBnomics.jl`, go to the package manager with `]` :
 
 ```julia
+add DBnomics
+# or
 add https://github.com/s915/DBnomics.jl
 ```
 
-:warning: If your version of Julia is less than 0.7.0 then the packages
+:warning: To ensure a greater compatibility regarding Julia's versions :
+:one: For **Julia < 0.7.0**, the packages
 **Missings** and **NamedTuples** are needed. They don't appear in the REQUIRE
 file but an error message will come up if these packages aren't installed.
+:two: For **Julia &ge; 0.7.0**, the package
+**Dates** is needed even if it doesn't appear in the REQUIRE
+file.
 
 ## Examples
 Fetch time series by `ids` :
