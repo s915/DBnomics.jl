@@ -14,10 +14,10 @@ add DBnomics
 add https://github.com/s915/DBnomics.jl
 ```
 
-:warning: To ensure a greater compatibility regarding Julia's versions :
+:warning: To ensure a greater compatibility regarding Julia's versions :  
 :one: For **Julia < 0.7.0**, the packages
 **Missings** and **NamedTuples** are needed. They don't appear in the REQUIRE
-file but an error message will come up if these packages aren't installed.
+file but an error message will come up if these packages aren't installed.  
 :two: For **Julia &ge; 0.7.0**, the package
 **Dates** is needed even if it doesn't appear in the REQUIRE
 file.
