@@ -144,5 +144,55 @@ If you just want to do it once, you may use the argument `use_readlines` of the 
 df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN", use_readlines = true);
 ```
 
+## Transform the `DataFrame` object into a `TimeArray` object (Julia &ge; 0.7)
+For some analysis, it is more convenient to have a `TimeArray` object instead of a `DataFrame` object. To transform
+it, you can use the following functions :
+```julia
+using DBnomics
+using DataFrames
+using TimeSeries
+
+function to_namedtuples(x::DataFrames.DataFrame)
+    nm = names(x);
+    vl = [x[:, col] for col in names(x)];
+
+    nm = tuple(nm...);
+    vl = tuple(vl...);
+
+    NamedTuple{nm}(vl)
+end
+
+function to_timeseries(
+    x::DataFrames.DataFrame,
+    index = :period, variable = :series_code, value = :value
+)
+    x = unstack(x, index, variable, value);
+    x = to_namedtuples(x);
+    x = TimeArray(x, timestamp = index);
+    x
+end
+
+rdb("IMF", "CPI", mask = "M.DE+FR.PCPIEC_WT")
+#> 570×13 DataFrame. Omitted printing of 9 columns
+#> │ Row │ @frequency │ dataset_code │ dataset_name               │ indexed_at                    │
+#> │     │ String     │ String       │ String                     │ TimeZones.ZonedDateTime       │
+#> ├─────┼────────────┼──────────────┼────────────────────────────┼───────────────────────────────┤
+#> │ 1   │ monthly    │ CPI          │ Consumer Price Index (CPI) │ 2019-05-18T02:48:55.708+00:00 │
+#> │ 2   │ monthly    │ CPI          │ Consumer Price Index (CPI) │ 2019-05-18T02:48:55.708+00:00 │
+#> │ ... │ ...        │ ...          │ ...                        │ ...                           │
+#> │ 569 │ monthly    │ CPI          │ Consumer Price Index (CPI) │ 2019-05-18T02:48:55.708+00:00 │
+#> │ 570 │ monthly    │ CPI          │ Consumer Price Index (CPI) │ 2019-05-18T02:48:55.708+00:00 │
+
+to_timeseries(rdb("IMF", "CPI", mask = "M.DE+FR.PCPIEC_WT"))
+#> 291×2 TimeArray{Union{Missing, Float64},2,Date,Array{Union{Missing, Float64},2}} 1995-01-01 to 2019-03-01
+#> │            │ M.DE.PCPIEC_WT │ M.FR.PCPIEC_WT │
+#> ├────────────┼────────────────┼────────────────┤
+#> │ 1995-01-01 │ missing        │ 20.0           │
+#> │ 1995-02-01 │ missing        │ 20.0           │
+#> │ ...        │ ...            │ ...            │
+#> │ 2019-02-01 │ 30.1           │ 25.8           │
+#> │ 2019-03-01 │ 30.1           │ 25.8           │
+```
+
 ## P.S.
 Visit <a href="https://db.nomics.world/" target="_blank">https://db.nomics.world/</a> :bar_chart: !
