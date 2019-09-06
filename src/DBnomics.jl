@@ -1,25 +1,19 @@
 module DBnomics
     #---------------------------------------------------------------------------
-    # If the version of Julia is lower than 0.7.0, the packages "Missings"
-    # and "NamedTuples" are needed.
-    version7 = VERSION < VersionNumber("0.7.0");
-
-    if version7
-        if !isdir(Pkg.dir("Missings")) | !isdir(Pkg.dir("NamedTuples"))
-            println(
-                "Package 'Missings' and 'NamedTuples' are required for Julia " *
-                "versions lower than 0.7.0. You are using version " *
-                string(VERSION) * "."
-            )
-            println("Install 'Missings' and/or 'NamedTuples' to continue.")
-            pkgs = ["Missings", "NamedTuples"];
-            check = map(u -> isdir(Pkg.dir(u)) ? "ok" : "please install", pkgs);
-            display(Dict(zip(pkgs, check)))
-            println(
-                """Install with Pkg.add("...") to continue."""
-            )
+    # Julia version greater or equal to 1.2.0
+    version12 = (VERSION >= VersionNumber("0.7.0")) & (VERSION < VersionNumber("1.2.0"));
+    # WARNING
+    # For Julia v0.7, JSON version must be 0.20.0 because of Parsers
+    if VERSION < VersionNumber("1.0.0")
+        import Pkg
+        Parsers_version = Pkg.installed()["Parsers"] <= VersionNumber("0.3.0")
+        JSON_version = Pkg.installed()["JSON"] >= VersionNumber("0.21.0")
+        if Parsers_version & JSON_version
             error(
-                """A required package is missing."""
+                "The package version of JSON must be 0.20.0 because of the " *
+                "version of Parsers." *
+                "\n" *
+                """Please run "add JSON@0.20.0" in the package manager."""
             )
         end
     end
@@ -27,69 +21,38 @@ module DBnomics
     #---------------------------------------------------------------------------
     # Load packages.
     using DataFrames
-    if version7
-        import Base.Dates
-        using Missings
-        using NamedTuples
-    else
-        import Dates
-    end
+    import Dates
     import HTTP
     import JSON
     import TimeZones
 
     #---------------------------------------------------------------------------
-    # Nothing
-    if version7
-        # Nothing doesn't exist before v0.7.0
-        Nothing = Void
-    end
-
-    # occursin
-    if version7
-        # contains has been renamed to occursin
-        function occursin(needle, haystack)
-            contains(haystack, needle)
-        end
-    end
-
-    # filter
-    if version7
-        function filter_true(x::Dict) 
-            filter((k, v) -> v == true, x)
-        end
-    else
-        function filter_true(x::Dict) 
-            filter(d -> (last(d) == true), x)
-        end
-    end
-
-    # repeat_df
-    if version7
-        function repeat_df(x::Array{DataFrames.DataFrame, 1}, n::Int64) 
-            map(x) do internx
-                reduce((u, v) -> vcat(u, v), repeat([internx], n))
-            end
-        end
-    else
-        function repeat_df(x::Array{DataFrames.DataFrame, 1}, n::Int64) 
-            repeat.(x, Ref(n))
-        end
+    # DataFrames version
+    df_test = DataFrame(A = 1, B = rand(1))
+    DataFrames019 = try
+        df_test[!, :A]
+        false
+    catch
+        true
     end
 
     # df_delete_col
-    if version7
+    if DataFrames019
         function df_delete_col!(x::DataFrames.DataFrame, y)
-            delete!(x, y)
+            deletecols!(x, y)
         end
     else
         function df_delete_col!(x::DataFrames.DataFrame, y)
-            deletecols!(x, y)
+            select!(x, Not(y))
         end
     end
 
     #---------------------------------------------------------------------------
     # Global variables.
+    # Julia version lower than 1.2.0
+    global version12 = version12
+    # DataFrames version lower than 0.19
+    global DataFrames019 = DataFrames019
     # API version
     global api_version = 22
     # API base url
@@ -111,7 +74,15 @@ module DBnomics
     # Warning for ids in rdb
     global verbose_warning = true
     # Download metadata
-    global metadata = false
+    global metadata = true
+    # Translate codes like ISO, geo, ...
+    global translate_codes = true
+    # Apply some filters to the series
+    global filters = nothing
+    # API editor url
+    global editor_base_url = "https://editor.nomics.world"
+    # API editor version
+    global editor_version = 1
 
     # Modify global variables
     function options(s::AbstractString, v::Any)
@@ -168,6 +139,18 @@ module DBnomics
             if !isa(tmp, Bool)
                 error("'metadata' must be a Bool.")
             end
+        elseif String(s) == "translate_codes"
+            if !isa(tmp, Bool)
+                error("'translate_codes' must be a Bool.")
+            end
+        elseif String(s) == "editor_base_url"
+            if !isa(tmp, String)
+                error("'editor_base_url' must be a String.")
+            end
+        elseif String(s) == "editor_version"
+            if !isa(tmp, Int64)
+                error("'editor_version' must be an Int64.")
+            end
         else
             error("Invalid option name.")
         end
@@ -188,7 +171,11 @@ module DBnomics
         DBnomics.options("timestamp_tz", TimeZones.tz"GMT")
         DBnomics.options("try_run", 2)
         DBnomics.options("verbose_warning", true)
-        DBnomics.options("metadata", false)
+        DBnomics.options("metadata", true)
+        DBnomics.options("translate_codes", true)
+        DBnomics.options("filters", nothing)
+        DBnomics.options("editor_version", 1)
+        DBnomics.options("editor_base_url", "https://editor.nomics.world")
 
         nothing
     end

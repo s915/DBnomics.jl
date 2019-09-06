@@ -1,6 +1,6 @@
 # DBnomics.jl
 
-## DBnomics Julia client (Julia version &ge; 0.6.4)
+## DBnomics Julia client (Julia version &ge; 0.7)
 
 This package provides you access to DBnomics data series. DBnomics is an open-source project with the goal of aggregating the world's economic data in one location, free of charge to the public. DBnomics covers hundreds of millions of series from international and national institutions (Eurostat, World Bank, IMF, ...).
 
@@ -10,17 +10,14 @@ To install `DBnomics.jl`, go to the package manager with `]` :
 
 ```julia
 add DBnomics
-# or
+```
+or install the github version with :
+
+```julia
 add https://github.com/s915/DBnomics.jl
 ```
 
-:warning: To ensure a greater compatibility regarding Julia's versions :  
-:one: For **Julia < 0.7.0**, the packages
-**Missings** and **NamedTuples** are needed. They don't appear in the REQUIRE
-file but an error message will come up if these packages aren't installed.  
-:two: For **Julia &ge; 0.7.0**, the package
-**Dates** is needed even if it doesn't appear in the REQUIRE
-file.
+All the functions, and their names, are derived from the R package <a href="https://github.com/dbnomics/rdbnomics" target="_blank"><b>rdbnomics</b></a>.
 
 ## Examples
 Fetch time series by `ids` :
@@ -90,12 +87,12 @@ df1 = rdb_by_api_link("https://api.db.nomics.world/v22/series/WB/DB?dimensions=%
 ## Proxy configuration
 When using the functions `rdb` or `rdb_...`, if you come across an error concerning your internet connection, you can get round this situation by :
 
-1. configuring **curl** of the function `HTTP.get` to use a specific and authorized proxy.
+1. configuring **curl** of the function `HTTP.get` or `HTTP.post` to use a specific and authorized proxy.
 
 2. using the functions `readlines` and `download` if you have problem with `HTTP.get`.
 
 ### Configure **curl** to use a specific and authorized proxy
-In **DBnomics**, by default the function `HTTP.get` is used to fetch the data. If a specific proxy must be used, it is possible to define it permanently with the package global variable `curl_config` or on the fly through the argument `curl_config`. In that way the object is passed to the keyword arguments of the `HTTP.get` function.  
+In **DBnomics**, by default the function `HTTP.get` or `HTTP.post` is used to fetch the data. If a specific proxy must be used, it is possible to define it permanently with the package global variable `curl_config` or on the fly through the argument `curl_config`. In that way the object is passed to the keyword arguments of the `HTTP.get` or `HTTP.post` function.  
 To see the available parameters, visit the website <a href="https://curl.haxx.se/libcurl/c/curl_easy_setopt.html" target="_blank">https://curl.haxx.se/libcurl/c/curl_easy_setopt.html</a>. Once they are chosen, you define the curl object as follows :
 ```julia
 h = Dict(:proxy => "<proxy>", :proxyport => <port>, :proxyusername => "<username>", :proxypassword => "<password>");
@@ -144,6 +141,35 @@ If you just want to do it once, you may use the argument `use_readlines` of the 
 df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN", use_readlines = true);
 ```
 
+## Transform time series with filters
+The **DBnomics.jl** package can interact with the *Time Series Editor* of DBnomics to transform time series by applying filters to them.  
+Available filters are listed on the filters page [https://editor.nomics.world/filters](https://editor.nomics.world/filters).
+
+Here is an example of how to proceed to interpolate two annual time series with a monthly frequency, using a spline interpolation:
+
+```julia
+filters = Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "spline"));
+
+df = rdb(ids = ["AMECO/ZUTN/EA19.1.0.0.0.ZUTN", "AMECO/ZUTN/DNK.1.0.0.0.ZUTN"], filters = filters);
+```
+
+If you want to apply more than one filter, the `filters` argument will be a list of valid filters:
+```julia
+filters <- (Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "spline")), Dict(:code => "aggregate", :parameters => Dict(:frequency => "bi-annual", :method => "end_of_period")));
+
+df = rdb(ids = ["AMECO/ZUTN/EA19.1.0.0.0.ZUTN", "AMECO/ZUTN/DNK.1.0.0.0.ZUTN"], filters = filters);
+```
+
+The `DataFrame` columns change a little bit when filters are used. There are two new columns:
+
+- `period_middle_day`: the middle day of `original_period` (can be useful when you compare graphically interpolated series and original ones).
+- `filtered` (boolean): `TRUE` if the series is filtered, `FALSE` otherwise.
+
+The content of two columns are modified:
+
+- `series_code`: same as before for original series, but the suffix `_filtered` is added for filtered series.
+- `series_name`: same as before for original series, but the suffix ` (filtered)` is added for filtered series.
+
 ## Transform the `DataFrame` object into a `TimeArray` object (Julia &ge; 0.7)
 For some analysis, it is more convenient to have a `TimeArray` object instead of a `DataFrame` object. To transform
 it, you can use the following functions :
@@ -153,11 +179,14 @@ using DataFrames
 using TimeSeries
 
 function to_namedtuples(x::DataFrames.DataFrame)
-    nm = names(x);
-    vl = [x[:, col] for col in names(x)];
-
-    nm = tuple(nm...);
-    vl = tuple(vl...);
+    nm = names(x)
+    try
+        vl = [x[:, col] for col in names(x)]
+    catch
+        vl = [x[!, col] for col in names(x)]
+    end
+    nm = tuple(nm...)
+    vl = tuple(vl...)
 
     NamedTuple{nm}(vl)
 end
@@ -166,9 +195,9 @@ function to_timeseries(
     x::DataFrames.DataFrame,
     index = :period, variable = :series_code, value = :value
 )
-    x = unstack(x, index, variable, value);
-    x = to_namedtuples(x);
-    x = TimeArray(x, timestamp = index);
+    x = unstack(x, index, variable, value)
+    x = to_namedtuples(x)
+    x = TimeArray(x, timestamp = index)
     x
 end
 

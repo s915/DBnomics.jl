@@ -8,6 +8,7 @@
         mask::Union{String, Nothing} = nothing,
         use_readlines::Bool = DBnomics.use_readlines,
         curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config,
+        filters::Union{Nothing, Dict, Tuple} = DBnomics.filters,
         kwargs...
     )
 
@@ -41,7 +42,14 @@ the arguments names can be dropped. The `mask` will be passed through `mask_arg`
   If not `nothing`, it is used to configure a proxy connection. This
   configuration is passed to the keyword arguments of the function `HTTP.get` of
   the package *HTTP*.
-- `kwargs...`: Keyword arguments to be passed to `HTTP.get`.
+- `filters::Union{Nothing, Dict, Tuple} = DBnomics.filters`: (default `nothing`)
+  This argument must be a `Dict` for one filter because the function `json` of the
+  package *JSON* is used before sending the request to the server. For multiple
+  filters, you have to provide a `Tuple` of valid filters (see examples).
+  A valid filter is a `Dict` with a key `code` which value is a character string,
+  and a key `parameters` which value is a `Dict` with keys `frequency`
+  and `method` or `nothing`.
+- `kwargs...`: Keyword arguments to be passed to `HTTP.get` or `HTTP.post`.
 
 # Examples
 ```jldoctest
@@ -96,7 +104,7 @@ julia> h = Dict(:proxy => "<proxy>", :proxyport => <port>, :proxyusername => "<u
 julia> DBnomics.options("curl_config", h);
 julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN");
 # or
-julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN", curl_config = h)
+julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN", curl_config = h);
 
 
 ## Use readlines and download
@@ -104,6 +112,19 @@ julia> DBnomics.options("use_readlines", true);
 julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN");
 # or
 julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN", use_readlines = true);
+
+
+## Apply a filter to the series
+# One filter
+julia> filters = Dict(:code => "interpolate", :parameters => Dict(:frequency => "daily", :method => "spline"));
+julia> df1 = rdb(ids = ["IMF/WEO/ABW.BCA", "IMF/WEO/ABW.BCA_NGDPD"], filters = filters);
+
+# For two filters
+julia> filters = (Dict(:code => "interpolate", :parameters => Dict(:frequency => "quarterly", :method => "spline")), Dict(:code => "aggregate", :parameters => Dict(:frequency => "annual", :method => "average")));
+julia> df1 = rdb(ids = ["IMF/WEO/ABW.BCA", "IMF/WEO/ABW.BCA_NGDPD"], filters = filters);
+
+julia> filters = (Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "linear")), Dict(:code => "x13", :parameters => nothing));
+julia> df1 = rdb("ECB/EXR/A.AUD.EUR.SP00.A", filters = filters);
 ```
 """
 function rdb(
@@ -115,6 +136,7 @@ function rdb(
     mask::Union{String, Nothing} = nothing,
     use_readlines::Bool = DBnomics.use_readlines,
     curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config,
+    filters::Union{Nothing, Dict, Tuple} = DBnomics.filters,
     kwargs...
 )
     # Setting API url
@@ -125,7 +147,6 @@ function rdb(
   
     # Setting API metadata
     metadata = DBnomics.metadata
-    metadata = string(Int64(metadata))
 
     api_base_url = api_base_url * "/v" * string(api_version) * "/series"
   
@@ -193,13 +214,13 @@ function rdb(
         dimensions = to_json_if_dict_namedtuple(dimensions)
 
         link = api_base_url * "/" * provider_code * "/" * dataset_code *
-            "?metadata=" * metadata *
+            (metadata ? "?" : ("?metadata=" * string(Int64(metadata)), "&")) *
             "&observations=1&dimensions=" * dimensions
     
         return rdb_by_api_link(
             link;
             use_readlines = use_readlines, curl_config = curl_config,
-            kwargs...
+            filters = filters, kwargs...
         )
     end
 
@@ -214,12 +235,14 @@ function rdb(
         end
   
         link = api_base_url * "/" * provider_code * "/" * dataset_code *
-            "/" * mask * "?metadata=" * metadata * "&observations=1"
+            "/" * mask *
+            (metadata ? "?" : ("?metadata=" * string(Int64(metadata)), "&")) *
+            "&observations=1"
   
         return rdb_by_api_link(
             link;
             use_readlines = use_readlines, curl_config = curl_config,
-            kwargs...
+            filters = filters, kwargs...
         )
     end
   
@@ -244,14 +267,15 @@ function rdb(
             error("'ids' is empty.")
         end
   
-        link = api_base_url * "?metadata=" * metadata *
+        link = api_base_url *
+            (metadata ? "?" : ("?metadata=" * string(Int64(metadata)), "&")) *
             "&observations=1&series_ids=" *
-            reduce((u,w) -> u * "," * w, ids)
+            reduce((u, w) -> u * "," * w, ids)
         
         return rdb_by_api_link(
             link;
             use_readlines = use_readlines, curl_config = curl_config,
-            kwargs...
+            filters = filters, kwargs...
         )
     end
   

@@ -2,17 +2,29 @@
 function printDT(x::DataFrames.DataFrame, n::Union{Nothing, Int64} = nothing)
     if nrow(x) <= 10
         if isa(n, Nothing)
-            x[:_row_] = 1:nrow(x)
+            if DBnomics.DataFrames019
+                x[:, :_row_] = 1:nrow(x)
+            else
+                x[!, :_row_] = 1:nrow(x)
+            end
         else
-            x[:_row_] = vcat(1:5, (n - 4):n)
+            if DBnomics.DataFrames019
+                x[:, :_row_] = vcat(1:5, (n - 4):n)
+            else
+                x[!, :_row_] = vcat(1:5, (n - 4):n)
+            end
         end
 
-        x = x[[ncol(x); 1:(ncol(x) - 1)]]
+        if DBnomics.DataFrames019
+            x = x[:, [ncol(x); 1:(ncol(x) - 1)]]
+        else
+            x = x[!, [ncol(x); 1:(ncol(x) - 1)]]
+        end
 
         try
             show(x, allcols = true)
         catch
-            showall(x)
+            DataFrames.showall(x)
         end
 
         df_delete_col!(x, :_row_)
@@ -22,6 +34,12 @@ function printDT(x::DataFrames.DataFrame, n::Union{Nothing, Int64} = nothing)
         y = [x[1:5,:]; x[(end - 4):end,:]]
         printDT(y, nrow(x))
     end
+end
+
+#-------------------------------------------------------------------------------
+# repeat_df
+function repeat_df(x::Array{DataFrames.DataFrame, 1}, n::Int64) 
+    repeat.(x, Ref(n))
 end
 
 #-------------------------------------------------------------------------------
@@ -56,15 +74,31 @@ function concatenate_data(
 
     add_x = setdiff(nm_y, nm_x)
     if length(add_x) > 0
-        x[add_x] = missing
+        if DBnomics.DataFrames019
+            x[:, add_x] = missing
+        else
+            for iadd_x in add_x
+                x[!, iadd_x] .= Ref(missing)
+            end
+        end
     end
     
     add_y = setdiff(nm_x, nm_y)
     if length(add_y) > 0
-        y[add_y] = missing
+        if DBnomics.DataFrames019
+            y[:, add_y] = missing
+        else
+            for iadd_y in add_y
+                y[!, iadd_y] .= Ref(missing)
+            end
+        end
     end
     
-    [x; y[names(x)]]
+    if DBnomics.DataFrames019
+        [x; y[:, names(x)]]
+    else
+        [x; y[!, names(x)]]
+    end
 end
 
 #-------------------------------------------------------------------------------
@@ -224,14 +258,30 @@ function transform_date_timestamp!(DT::DataFrames.DataFrame)
     ]
 
     for col in names(DT)
-        x = DT[col]
+        if DBnomics.DataFrames019
+            x = DT[:, col]
+        else
+            x = DT[!, col]
+        end
         if isa(x, Array{String, 1}) || isa(x, Array{Union{Missing, String}, 1})
             if date_format(x)
-                DT[col] = to_date.(x)
+                if DBnomics.DataFrames019
+                    DT[:, col] = to_date.(x)
+                else
+                    DT[!, col] = to_date.(x)
+                end
             end
             for i in 1:length(from_timestamp_format)
                 if timestamp_format(x, from_timestamp_format[i])
-                    DT[col] = to_timestamp.(x, Ref(to_timestamp_format[i]))
+                    if DBnomics.DataFrames019
+                        DT[:, col] = to_timestamp.(
+                            x, Ref(to_timestamp_format[i])
+                        )
+                    else
+                        DT[!, col] = to_timestamp.(
+                            x, Ref(to_timestamp_format[i])
+                        )
+                    end
                 end
             end
         end
@@ -287,10 +337,14 @@ function simplify_type(x)
                     result = convert(Array{Float64, 1}, x)
                 end
             catch
-                if has_missing(x)
-                    result = convert(Array{Union{Missing, String}, 1}, x)
-                else
-                    result = convert(Array{String, 1}, x)
+                try
+                    if has_missing(x)
+                        result = convert(Array{Union{Missing, String}, 1}, x)
+                    else
+                        result = convert(Array{String, 1}, x)
+                    end
+                catch
+                    result = x
                 end
             end
         end
@@ -301,7 +355,11 @@ function simplify_type(x)
             try
                 result = convert(Array{Float64,1}, x)
             catch
-                result = convert(Array{String,1}, x)
+                try
+                    result = convert(Array{String,1}, x)
+                catch
+                    result = x
+                end
             end
         end
     else
@@ -318,8 +376,14 @@ end
 #-------------------------------------------------------------------------------
 # change_type!
 function change_type!(DT::DataFrames.DataFrame)
-    for col in names(DT)
-        DT[col] = simplify_type(DT[col])
+    if DBnomics.DataFrames019
+        for col in names(DT)
+            DT[:, col] = simplify_type(DT[:, col])
+        end
+    else
+        for col in names(DT)
+            DT[!, col] = simplify_type(DT[!, col])
+        end
     end
     nothing
 end
@@ -338,7 +402,9 @@ to_json_if_dict_namedtuple(x::String) = x
 #-------------------------------------------------------------------------------
 # get_data
 function get_data(
-    x::String, userl::Bool = false, frun::Int64 = 0;
+    x::String, userl::Bool = false, frun::Int64 = 0,
+    headers::Union{Nothing, Array{Pair{String,String},1}} = nothing,
+    body::Union{Nothing, String} = nothing;
     curl_conf...
 )
     if (frun > 0)
@@ -347,7 +413,7 @@ function get_data(
     end
   
     try
-        if (userl)
+        if userl
             # Only readLines
             try
                 response = readurl(x)
@@ -357,7 +423,11 @@ function get_data(
             end
         else
             try
-                response = HTTP.get(x; curl_conf...)    
+                if !isa(headers, Nothing) & !isa(body, Nothing)
+                    response = HTTP.post(x, headers, body; curl_conf...)
+                else
+                    response = HTTP.get(x; curl_conf...)    
+                end
                 if !response_ok(response)
                     error("The response is not <200 OK>.")
                 end
@@ -380,7 +450,7 @@ function get_data(
         end
 
         if (frun < try_run)
-            get_data(x, userl = userl, curl_args = curl_args, frun = frun + 1)
+            get_data(x, userl, frun + 1, headers, body; curl_conf...)
         else
             rethrow(e)
         end
@@ -431,6 +501,231 @@ function value_to_array(x::Dict)
     len = maximum(collect(values(len)))
 
     Dict(k => length(v) != len ? repeat(v, len) : v for (k, v) in x)
+end
+
+#-------------------------------------------------------------------------------
+# retrieve
+function retrieve(x::Dict, key_of_interest::Regex, output::Array = [])
+    for (key, value) in x
+        if occursin(key_of_interest, key)
+            push!(output, value)
+        end
+        if isa(value, AbstractDict)
+            retrieve(value, key_of_interest, output)
+        end
+    end
+    output
+end
+
+#-------------------------------------------------------------------------------
+# remove_provider
+function remove_provider!(x::Array)
+    map(x) do u
+        u[1] = replace(u[1], r".*/" => "")
+        u
+    end
+end
+
+#-------------------------------------------------------------------------------
+# get_geo_colname
+function get_geo_colname(x::Dict)
+    # First try with multiple datasets
+    try
+        subdict = x["datasets"]
+        output = []
+        for (key, value) in subdict
+            res_dict = retrieve(subdict[key], r"^dimensions_label[s]*$")[1]
+            for (k, v) in res_dict
+                push!(output, [key, k ,v])
+            end
+        end
+        output = unique(output)
+        return output
+    catch
+        # Second try with only one dataset
+        try
+            subdict = x["dataset"]
+            output = []
+            keys_ = [string(key) for key in keys(subdict)]
+            k = keys_[occursin.(Ref(r"^dimensions_label[s]*$"), keys_)]
+            res_dict = subdict[k[1]]
+            for (k, v) in res_dict
+                push!(output, [subdict["code"], k ,v])
+            end
+            output = unique(output)
+            return output
+        catch
+            return nothing
+        end
+    end
+end
+
+#-------------------------------------------------------------------------------
+# get_geo_names
+get_geo_names(x::Dict, colname::Nothing) = nothing
+function get_geo_names(x::Dict, colname::Array)
+    # First try with multiple datasets
+    try
+        result = map(colname) do u
+            k = replace(u[1], r".*/" => "")
+
+            z = retrieve(x["datasets"][u[1]], Regex("^" * u[2] * "\$"))
+            z = to_dataframe(z[1])
+            z = stack(z, names(z))
+            if DBnomics.DataFrames019
+                z[:, :variable] = string.(z[:, :variable])
+            else
+                z[!, :variable] = string.(z[!, :variable])
+            end
+            names!(z, Symbol.(u[2:3]))
+            
+            insertcols!(z, 1, :dataset_code => k)
+            z
+        end
+        return result
+    catch
+        # Second try with only one dataset
+        try
+            result = map(colname) do u
+                subdict = x["dataset"]
+                k = replace(u[1], r".*/" => "")
+
+                keys_ = [string(key) for key in keys(subdict)]
+                k_ = keys_[
+                    occursin.(Ref(r"^dimensions_value[s]*_label[s]*$"), keys_)
+                ]
+            
+                z = subdict[k_[1]][u[2]]
+                z = to_dataframe(z)
+                z = stack(z, names(z))
+                if DBnomics.DataFrames019
+                    z[:, :variable] = string.(z[:, :variable])
+                else
+                    z[!, :variable] = string.(z[!, :variable])
+                end
+                names!(z, Symbol.(u[2:3]))
+                
+                insertcols!(z, 1, :dataset_code => k)
+                z
+            end
+            return result
+        catch
+            return nothing
+        end
+    end
+end
+
+#-------------------------------------------------------------------------------
+# filter_true
+function filter_true(x::Dict) 
+    filter(d -> (last(d) == true), x)
+end
+
+#-------------------------------------------------------------------------------
+# filter_type
+function filter_type(x::Tuple)
+    test = try
+        res = "ko"
+        n = length(x)
+        y = map(filter_ok, x)
+        y = sum(y)
+        if y == n
+            res = "tuple"
+        end
+        res
+    catch
+        "ko"
+    end
+
+    test
+end
+
+function filter_type(x::Dict)
+    # When Dict
+    test = try
+        res = filter_ok(x)
+        if res
+            res = "nottuple"
+        else
+            res = "ko"
+        end
+        res
+    catch
+        "ko"
+    end
+  
+    test
+end
+
+#-------------------------------------------------------------------------------
+# filter_ok
+function filter_ok(x::Dict)
+    try
+        res = false
+        nm1 = [string(key) for key in keys(x)]
+        if isa(x[:parameters], Nothing)
+            nm2 = nothing
+        else
+            nm2 = [string(key) for key in keys(x[:parameters])]
+        end
+        if nm1 == ["code", "parameters"]
+            if isa(nm2, Nothing)
+                res = true
+            end
+            if nm2 == ["frequency", "method"]
+                res = true
+            end
+        end
+        res
+    catch
+        false
+    end
+end
+
+#-------------------------------------------------------------------------------
+# remove_columns
+function remove_columns!(
+    DT::DataFrames.DataFrame, x::Union{String, Array{String, 1}, Regex},
+    expr::Bool = false
+)
+    colnames = string.(names(DT))
+    if expr
+        cols = colnames[occursin.(Ref(x), colnames)]
+    else
+        if isa(x, String)
+            x = [x]
+        end
+        cols = intersect(x, colnames)
+    end
+    if length(cols) > 0
+        df_delete_col!(DT, Symbol.(x))
+    end
+    
+    nothing
+end
+
+#-------------------------------------------------------------------------------
+# reduce_to_one
+function reduce_to_one!(DT::DataFrames.DataFrame)
+    x = Dict{String, Int64}()
+
+    if DBnomics.DataFrames019
+        for col in names(DT)
+            push!(x, string(col) => length(unique(DT[:, col])))
+        end
+    else
+        for col in names(DT)
+            push!(x, string(col) => length(unique(DT[!, col])))
+        end
+    end
+
+    x = filter(u -> u[2] > 1, x)
+    if length(x)
+        x = Symbol.(keys(x))
+        df_delete_col!(DT, x)
+    end
+  
+    nothing
 end
 
 #-------------------------------------------------------------------------------

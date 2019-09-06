@@ -52,7 +52,7 @@ function rdb_providers(
         curl_config = kwargs
     end
 
-    providers = get_data(api_link, use_readlines, 0; curl_config...)
+    providers = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
     providers = providers["providers"]["docs"]
     providers = to_dataframe.(providers)
     providers = concatenate_data(providers)
@@ -60,7 +60,12 @@ function rdb_providers(
     transform_date_timestamp!(providers)
 
     if code
-        providers = sort(providers[:code])
+        if DBnomics.DataFrames019
+            providers = providers[:, :code]
+        else
+            providers = providers[!, :code]
+        end
+        providers = sort(providers)
     end
 
     providers

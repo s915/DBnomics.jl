@@ -52,7 +52,7 @@ function rdb_last_updates(
         curl_config = kwargs
     end
 
-    updates = get_data(api_link, use_readlines, 0; curl_config...)
+    updates = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
 
     num_found = updates["datasets"]["num_found"]
     limit = updates["datasets"]["limit"]
@@ -65,7 +65,7 @@ function rdb_last_updates(
     updates = map(iter) do u
         api_link = api_base_url * "/v" * string(api_version) *
             "/last-updates?datasets.offset=" * string(Int(u * limit))
-        tmp_up = get_data(api_link, use_readlines, 0; curl_config...)
+        tmp_up = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
         tmp_up = tmp_up["datasets"]["docs"]
         tmp_up = to_dataframe.(tmp_up)
         tmp_up = concatenate_data(tmp_up)
