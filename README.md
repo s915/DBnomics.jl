@@ -155,7 +155,7 @@ df = rdb(ids = ["AMECO/ZUTN/EA19.1.0.0.0.ZUTN", "AMECO/ZUTN/DNK.1.0.0.0.ZUTN"], 
 
 If you want to apply more than one filter, the `filters` argument will be a list of valid filters:
 ```julia
-filters <- (Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "spline")), Dict(:code => "aggregate", :parameters => Dict(:frequency => "bi-annual", :method => "end_of_period")));
+filters = (Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "spline")), Dict(:code => "aggregate", :parameters => Dict(:frequency => "bi-annual", :method => "end_of_period")));
 
 df = rdb(ids = ["AMECO/ZUTN/EA19.1.0.0.0.ZUTN", "AMECO/ZUTN/DNK.1.0.0.0.ZUTN"], filters = filters);
 ```
