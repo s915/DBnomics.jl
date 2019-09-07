@@ -184,30 +184,18 @@ function rdb_by_api_link(
         end
 
         # Filters are applied by 'series_code'
-        if DBnomics.DataFrames019
-            codes = unique(DBdata[:, :series_code])
-        else
-            codes = unique(DBdata[!, :series_code])
-        end
+        codes = unique(DBdata[selectop, :series_code])
 
         DBlist = map(1:length(codes)) do u
             x = codes[u]
             tmpdata = filter(row -> row.series_code == x, DBdata)
 
             # 'series' for the POST request
-            if DBnomics.DataFrames019
-                series = Dict(
-                    :frequency => unique(tmpdata[:, Symbol("@frequency")])[1],
-                    :period_start_day => tmpdata[:, :period],
-                    :value => tmpdata[:, :value]
-                )
-            else
-                series = Dict(
-                    :frequency => unique(tmpdata[!, Symbol("@frequency")])[1],
-                    :period_start_day => tmpdata[!, :period],
-                    :value => tmpdata[!, :value]
-                )
-            end
+            series = Dict(
+                :frequency => unique(tmpdata[selectop, Symbol("@frequency")])[1],
+                :period_start_day => tmpdata[selectop, :period],
+                :value => tmpdata[selectop, :value]
+            )
 
             # POST request header
             headers = [
@@ -260,13 +248,8 @@ function rdb_by_api_link(
         DBlist = reduce(vcat, DBlist)
 
         # Add filtered suffix
-        if DBnomics.DataFrames019
-            DBlist[:, :series_code] = DBlist[:, :series_code] .* "_filtered"
-            DBlist[:, :series_name] = DBlist[:, :series_name] .* "(filtered)"
-        else
-            DBlist[!, :series_code] = DBlist[!, :series_code] .* "_filtered"
-            DBlist[!, :series_name] = DBlist[!, :series_name] .* "(filtered)"
-        end
+        DBlist[selectop, :series_code] = DBlist[selectop, :series_code] .* "_filtered"
+        DBlist[selectop, :series_name] = DBlist[selectop, :series_name] .* "(filtered)"
 
         # We rename the column 'frequency'
         try
@@ -289,43 +272,27 @@ function rdb_by_api_link(
         
         # In case of different types, the type of the column 'original_period'
         # is set to 'character'
-        if DBnomics.DataFrames019
-            type_DBdata_string = isa(DBdata[:, :original_period], Array{String,1})
-            type_DBlist_string = isa(DBlist[:, :original_period], Array{String,1})
-            if type_DBdata_string & !type_DBlist_string
-                DBlist[:, :original_period] = string.(DBlist[:, :original_period])
-            end
-            if !type_DBdata_string & type_DBlist_string
-                DBdata[:, :original_period] = string.(DBdata[:, :original_period])
-            end
-        else
-            type_DBdata_string = isa(DBdata[!, :original_period], Array{String,1})
-            type_DBlist_string = isa(DBlist[!, :original_period], Array{String,1})
-            if type_DBdata_string & !type_DBlist_string
-                DBlist[!, :original_period] = string.(DBlist[!, :original_period])
-            end
-            if !type_DBdata_string & type_DBlist_string
-                DBdata[!, :original_period] = string.(DBdata[!, :original_period])
-            end
+        type_DBdata_string = isa(DBdata[selectop, :original_period], Array{String,1})
+        type_DBlist_string = isa(DBlist[selectop, :original_period], Array{String,1})
+        if type_DBdata_string & !type_DBlist_string
+            DBlist[selectop, :original_period] = string.(DBlist[selectop, :original_period])
+        end
+        if !type_DBdata_string & type_DBlist_string
+            DBdata[selectop, :original_period] = string.(DBdata[selectop, :original_period])
         end
 
         try
             rename!(DBlist, :period_start_day => :period)
         catch
-          error(
-              "The retrieved dataset doesn't have a column named " *
-              "'period_start_day', it's not normal please check <db.nomics.world>."
-          )
+            error(
+                "The retrieved dataset doesn't have a column named " *
+                "'period_start_day', it's not normal please check <db.nomics.world>."
+            )
         end
 
         # Add boolean to distinct be filtered and non-filtered series
-        if DBnomics.DataFrames019
-            DBdata[:, :filtered] = false
-            DBlist[:, :filtered] = true
-        else
-            DBdata[!, :filtered] .= false
-            DBlist[!, :filtered] .= true
-        end
+        DBdata[selectop, :filtered] = fill(false, nrow(DBdata))
+        DBlist[selectop, :filtered] = fill(true, nrow(DBlist))
     
         DBdata = [DBdata, DBlist]
         DBdata = reduce(concatenate_data, DBdata)

@@ -60,11 +60,7 @@ function rdb_providers(
     transform_date_timestamp!(providers)
 
     if code
-        if DBnomics.DataFrames019
-            providers = providers[:, :code]
-        else
-            providers = providers[!, :code]
-        end
+        providers = providers[selectop, :code]
         providers = sort(providers)
     end
 

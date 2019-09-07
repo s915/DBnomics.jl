@@ -2,30 +2,14 @@
 function printDT(x::DataFrames.DataFrame, n::Union{Nothing, Int64} = nothing)
     if nrow(x) <= 10
         if isa(n, Nothing)
-            if DBnomics.DataFrames019
-                x[:, :_row_] = 1:nrow(x)
-            else
-                x[!, :_row_] = 1:nrow(x)
-            end
+            x[selectop, :_row_] = 1:nrow(x)
         else
-            if DBnomics.DataFrames019
-                x[:, :_row_] = vcat(1:5, (n - 4):n)
-            else
-                x[!, :_row_] = vcat(1:5, (n - 4):n)
-            end
+            x[selectop, :_row_] = vcat(1:5, (n - 4):n)
         end
 
-        if DBnomics.DataFrames019
-            x = x[:, [ncol(x); 1:(ncol(x) - 1)]]
-        else
-            x = x[!, [ncol(x); 1:(ncol(x) - 1)]]
-        end
+        x = x[selectop, [ncol(x); 1:(ncol(x) - 1)]]
 
-        try
-            show(x, allcols = true)
-        catch
-            DataFrames.showall(x)
-        end
+        show(x, allcols = true)
 
         df_delete_col!(x, :_row_)
         nothing
@@ -74,31 +58,15 @@ function concatenate_data(
 
     add_x = setdiff(nm_y, nm_x)
     if length(add_x) > 0
-        if DBnomics.DataFrames019
-            x[:, add_x] = missing
-        else
-            for iadd_x in add_x
-                x[!, iadd_x] .= Ref(missing)
-            end
-        end
+        df_complete_missing!(x, add_x)
     end
     
     add_y = setdiff(nm_x, nm_y)
     if length(add_y) > 0
-        if DBnomics.DataFrames019
-            y[:, add_y] = missing
-        else
-            for iadd_y in add_y
-                y[!, iadd_y] .= Ref(missing)
-            end
-        end
+        df_complete_missing!(y, add_y)
     end
     
-    if DBnomics.DataFrames019
-        [x; y[:, names(x)]]
-    else
-        [x; y[!, names(x)]]
-    end
+    [x; y[selectop, names(x)]]
 end
 
 #-------------------------------------------------------------------------------
@@ -258,30 +226,14 @@ function transform_date_timestamp!(DT::DataFrames.DataFrame)
     ]
 
     for col in names(DT)
-        if DBnomics.DataFrames019
-            x = DT[:, col]
-        else
-            x = DT[!, col]
-        end
+        x = DT[selectop, col]
         if isa(x, Array{String, 1}) || isa(x, Array{Union{Missing, String}, 1})
             if date_format(x)
-                if DBnomics.DataFrames019
-                    DT[:, col] = to_date.(x)
-                else
-                    DT[!, col] = to_date.(x)
-                end
+                DT[selectop, col] = to_date.(x)
             end
             for i in 1:length(from_timestamp_format)
                 if timestamp_format(x, from_timestamp_format[i])
-                    if DBnomics.DataFrames019
-                        DT[:, col] = to_timestamp.(
-                            x, Ref(to_timestamp_format[i])
-                        )
-                    else
-                        DT[!, col] = to_timestamp.(
-                            x, Ref(to_timestamp_format[i])
-                        )
-                    end
+                    DT[selectop, col] = to_timestamp.(x, Ref(to_timestamp_format[i]))
                 end
             end
         end
@@ -376,14 +328,8 @@ end
 #-------------------------------------------------------------------------------
 # change_type!
 function change_type!(DT::DataFrames.DataFrame)
-    if DBnomics.DataFrames019
-        for col in names(DT)
-            DT[:, col] = simplify_type(DT[:, col])
-        end
-    else
-        for col in names(DT)
-            DT[!, col] = simplify_type(DT[!, col])
-        end
+    for col in names(DT)
+        DT[selectop, col] = simplify_type(DT[selectop, col])
     end
     nothing
 end
@@ -572,11 +518,7 @@ function get_geo_names(x::Dict, colname::Array)
             z = retrieve(x["datasets"][u[1]], Regex("^" * u[2] * "\$"))
             z = to_dataframe(z[1])
             z = stack(z, names(z))
-            if DBnomics.DataFrames019
-                z[:, :variable] = string.(z[:, :variable])
-            else
-                z[!, :variable] = string.(z[!, :variable])
-            end
+            z[selectop, :variable] = string.(z[selectop, :variable])
             names!(z, Symbol.(u[2:3]))
             
             insertcols!(z, 1, :dataset_code => k)
@@ -598,11 +540,7 @@ function get_geo_names(x::Dict, colname::Array)
                 z = subdict[k_[1]][u[2]]
                 z = to_dataframe(z)
                 z = stack(z, names(z))
-                if DBnomics.DataFrames019
-                    z[:, :variable] = string.(z[:, :variable])
-                else
-                    z[!, :variable] = string.(z[!, :variable])
-                end
+                z[selectop, :variable] = string.(z[selectop, :variable])
                 names!(z, Symbol.(u[2:3]))
                 
                 insertcols!(z, 1, :dataset_code => k)
@@ -700,7 +638,6 @@ function remove_columns!(
     if length(cols) > 0
         df_delete_col!(DT, Symbol.(x))
     end
-    
     nothing
 end
 
@@ -709,14 +646,8 @@ end
 function reduce_to_one!(DT::DataFrames.DataFrame)
     x = Dict{String, Int64}()
 
-    if DBnomics.DataFrames019
-        for col in names(DT)
-            push!(x, string(col) => length(unique(DT[:, col])))
-        end
-    else
-        for col in names(DT)
-            push!(x, string(col) => length(unique(DT[!, col])))
-        end
+    for col in names(DT)
+        push!(x, string(col) => length(unique(DT[selectop, col])))
     end
 
     x = filter(u -> u[2] > 1, x)

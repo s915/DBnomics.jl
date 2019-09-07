@@ -1,6 +1,6 @@
 module DBnomics
     #---------------------------------------------------------------------------
-    # Julia version greater or equal to 1.2.0
+    # Julia version smaller than 1.2.0
     version12 = (VERSION >= VersionNumber("0.7.0")) & (VERSION < VersionNumber("1.2.0"));
     # WARNING
     # For Julia v0.7, JSON version must be 0.20.0 because of Parsers
@@ -29,21 +29,49 @@ module DBnomics
     #---------------------------------------------------------------------------
     # DataFrames version
     df_test = DataFrame(A = 1, B = rand(1))
-    DataFrames019 = try
-        df_test[!, :A]
-        false
-    catch
-        true
-    end
+    DataFrames019 = try (df_test[!, :A]; false) catch; true end
 
     # df_delete_col
     if DataFrames019
         function df_delete_col!(x::DataFrames.DataFrame, y)
             deletecols!(x, y)
+            nothing
         end
     else
         function df_delete_col!(x::DataFrames.DataFrame, y)
             select!(x, Not(y))
+            nothing
+        end
+    end
+
+    # selectop
+    selectop = DataFrames019 ? (:) : (!)
+
+    # df_new_col
+    if DataFrames019
+        function df_new_col!(x::DataFrames.DataFrame, col::Symbol, y)
+            x[:, col] = y
+            nothing
+        end
+    else
+        function df_new_col!(x::DataFrames.DataFrame, col::Symbol, y)
+            x[!, col] .= y
+            nothing
+        end
+    end
+
+    # df_complete_missing
+    if DataFrames019
+        function df_complete_missing!(x::DataFrames.DataFrame, add::Union{Symbol, Array{Symbol, 1}})
+            x[:, add] = missing
+            nothing
+        end
+    else
+        function df_complete_missing!(x::DataFrames.DataFrame, add::Union{Symbol, Array{Symbol, 1}})
+            for iadd in add
+                x[!, iadd] .= Ref(missing)
+            end
+            nothing
         end
     end
 
