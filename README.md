@@ -163,7 +163,7 @@ df = rdb(ids = ["AMECO/ZUTN/EA19.1.0.0.0.ZUTN", "AMECO/ZUTN/DNK.1.0.0.0.ZUTN"], 
 The `DataFrame` columns change a little bit when filters are used. There are two new columns:
 
 - `period_middle_day`: the middle day of `original_period` (can be useful when you compare graphically interpolated series and original ones).
-- `filtered` (boolean): `TRUE` if the series is filtered, `FALSE` otherwise.
+- `filtered` (boolean): `true` if the series is filtered, `false` otherwise.
 
 The content of two columns are modified:
 
