@@ -369,6 +369,9 @@ function get_data(
             end
         else
             try
+                if !DBnomics.secure
+                    x = replace(x, Regex("^https") => "http")
+                end
                 if !isa(headers, Nothing) & !isa(body, Nothing)
                     response = HTTP.post(x, headers, body; curl_conf...)
                 else

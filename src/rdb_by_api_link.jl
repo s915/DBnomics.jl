@@ -37,12 +37,17 @@ julia> df2 = rdb_by_api_link("https://api.db.nomics.world/v22/series/WB/DB?dimen
 
 
 ## Use proxy with curl
-julia> h = Dict(:proxy => "<proxy>", :proxyport => <port>, :proxyusername => "<username>", :proxypassword => "<password>");
+julia> h = Dict(:proxy => "http://<proxy>:<port>");
 
 julia> DBnomics.options("curl_config", h);
 julia> df1 = rdb_by_api_link("https://api.db.nomics.world/v22/series?observations=1&series_ids=AMECO/ZUTN/EA19.1.0.0.0.ZUTN,IMF/CPI/A.AT.PCPIT_IX");
 # or
 julia> df1 = rdb_by_api_link("https://api.db.nomics.world/v22/series?observations=1&series_ids=AMECO/ZUTN/EA19.1.0.0.0.ZUTN,IMF/CPI/A.AT.PCPIT_IX", curl_config = h);
+
+# Regarding the functioning of HTTP.jl, you might need to modify another option
+# It will change the nomics.world url from https:// to http://
+# (https://github.com/JuliaWeb/HTTP.jl/pull/390)
+julia> DBnomics.options("secure", false);
 
 
 ## Use readlines and download

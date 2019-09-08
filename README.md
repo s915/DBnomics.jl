@@ -95,7 +95,12 @@ When using the functions `rdb` or `rdb_...`, if you come across an error concern
 In **DBnomics**, by default the function `HTTP.get` or `HTTP.post` is used to fetch the data. If a specific proxy must be used, it is possible to define it permanently with the package global variable `curl_config` or on the fly through the argument `curl_config`. In that way the object is passed to the keyword arguments of the `HTTP.get` or `HTTP.post` function.  
 To see the available parameters, visit the website <a href="https://curl.haxx.se/libcurl/c/curl_easy_setopt.html" target="_blank">https://curl.haxx.se/libcurl/c/curl_easy_setopt.html</a>. Once they are chosen, you define the curl object as follows :
 ```julia
-h = Dict(:proxy => "<proxy>", :proxyport => <port>, :proxyusername => "<username>", :proxypassword => "<password>");
+h = Dict(:proxy => "http://<proxy>:<port>");
+```
+
+Regarding the functioning of **HTTP**, you might need to modify another option to change the db/editor.nomics.world url from 'https://' to 'http://' (*https://github.com/JuliaWeb/HTTP.jl/pull/390*) :
+```julia
+DBnomics.options("secure", false);
 ```
 
 #### Set the connection up for a session

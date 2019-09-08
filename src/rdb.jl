@@ -99,13 +99,17 @@ julia> df4 = rdb("IMF", "CPI", mask = "M..PCPIEC_IX+PCPIA_IX");
 
 
 ## Use proxy with curl
-julia> h = Dict(:proxy => "<proxy>", :proxyport => <port>, :proxyusername => "<username>", :proxypassword => "<password>");
+julia> h = Dict(:proxy => "http://<proxy>:<port>");
 
 julia> DBnomics.options("curl_config", h);
 julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN");
 # or
 julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN", curl_config = h);
 
+# Regarding the functioning of HTTP.jl, you might need to modify another option
+# It will change the nomics.world url from https:// to http://
+# (https://github.com/JuliaWeb/HTTP.jl/pull/390)
+julia> DBnomics.options("secure", false);
 
 ## Use readlines and download
 julia> DBnomics.options("use_readlines", true);

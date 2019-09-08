@@ -111,6 +111,8 @@ module DBnomics
     global editor_base_url = "https://editor.nomics.world"
     # API editor version
     global editor_version = 1
+    # https connection
+    global secure = true
 
     # Modify global variables
     function options(s::AbstractString, v::Any)
@@ -179,6 +181,10 @@ module DBnomics
             if !isa(tmp, Int64)
                 error("'editor_version' must be an Int64.")
             end
+        elseif String(s) == "secure"
+            if !isa(tmp, Bool)
+                error("'secure' must be a Bool.")
+            end
         else
             error("Invalid option name.")
         end
@@ -204,6 +210,7 @@ module DBnomics
         DBnomics.options("filters", nothing)
         DBnomics.options("editor_version", 1)
         DBnomics.options("editor_base_url", "https://editor.nomics.world")
+        DBnomics.options("secure", true)
 
         nothing
     end
