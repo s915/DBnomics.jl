@@ -663,6 +663,18 @@ function reduce_to_one!(DT::DataFrames.DataFrame)
 end
 
 #-------------------------------------------------------------------------------
+# original_value_to_string
+function original_value_to_string!(x::DataFrames.DataFrame, y)
+    if isa(y, Any)
+        try (y = string(y)) catch; end
+    elseif isa(y, Array{Any,1})
+        try (y = string.(y)) catch; end
+    end
+    x[selectop, :original_value] = y
+    nothing
+end
+
+#-------------------------------------------------------------------------------
 # JuliaDBtable
 # function JuliaDBtable(x::Dict)
 #     table((; value_to_array(key_to_symbol(x))...))

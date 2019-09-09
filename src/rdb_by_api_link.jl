@@ -132,7 +132,9 @@ function rdb_by_api_link(
     DBdata = DBdata["series"]["docs"]
     DBdata = to_dataframe.(DBdata)
     DBdata = reduce(concatenate_data, DBdata)
+    original_values = DBdata[selectop, :value]
     change_type!(DBdata)
+    original_value_to_string!(DBdata, original_values)
     transform_date_timestamp!(DBdata)
 
     if num_found > limit
@@ -150,7 +152,9 @@ function rdb_by_api_link(
             tmp_up = tmp_up["series"]["docs"]
             tmp_up = to_dataframe.(tmp_up)
             tmp_up = reduce(concatenate_data, tmp_up)
+            original_values = tmp_up[selectop, :value]
             change_type!(tmp_up)
+            original_value_to_string!(tmp_up, original_values)
             transform_date_timestamp!(tmp_up)
             tmp_up
         end
@@ -219,14 +223,19 @@ function rdb_by_api_link(
 
             request = get_data(editor_link, false, 0, headers, body; curl_config...)
             request = to_dataframe(request["filter_results"][1]["series"])
+            original_values = request[selectop, :value]
             change_type!(request)
+            original_value_to_string!(request, original_values)
             transform_date_timestamp!(request)
 
             # Some columns from the original dataset will be replaced by the
             # filtered dataset
             remove_columns!(
-              tmpdata,
-              ["@frequency", "original_period", "period", "value", "indexed_at"]
+                tmpdata,
+                [
+                    "@frequency", "original_period", "period", "value",
+                    "original_value", "indexed_at"
+                ]
             )
             if !isa(additional_geo_column, Nothing)
                 try
