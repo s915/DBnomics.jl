@@ -35,7 +35,7 @@ julia> rdb_providers(use_readlines = true)
 julia> rdb_providers(curl_config = Dict(:proxy => "http://<proxy>:<port>"))
 
 # Regarding the functioning of HTTP.jl, you might need to modify another option
-# It will change the nomics.world url from https:// to http://
+# It will change the url from https:// to http://
 # (https://github.com/JuliaWeb/HTTP.jl/pull/390)
 julia> DBnomics.options("secure", false);
 ```

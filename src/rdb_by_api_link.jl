@@ -18,7 +18,7 @@ The code of each series is given on the [DBnomics](https://db.nomics.world/) web
   the data are requested and read with the function `readlines`.
 - `curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config`: (default `nothing`)
   If not `nothing`, it is used to configure a proxy connection. This
-  configuration is passed to the keyword arguments of the function `HTTP.get` of
+  configuration is passed to the keyword arguments of the function `HTTP.get` or `HTTP.post` of
   the package *HTTP*.
 - `filters::Union{Nothing, Dict, Tuple} = DBnomics.filters`: (default `nothing`)
   This argument must be a `Dict` for one filter because the function `json` of the
@@ -45,7 +45,7 @@ julia> df1 = rdb_by_api_link("https://api.db.nomics.world/v22/series?observation
 julia> df1 = rdb_by_api_link("https://api.db.nomics.world/v22/series?observations=1&series_ids=AMECO/ZUTN/EA19.1.0.0.0.ZUTN,IMF/CPI/A.AT.PCPIT_IX", curl_config = h);
 
 # Regarding the functioning of HTTP.jl, you might need to modify another option
-# It will change the nomics.world url from https:// to http://
+# It will change the url from https:// to http://
 # (https://github.com/JuliaWeb/HTTP.jl/pull/390)
 julia> DBnomics.options("secure", false);
 

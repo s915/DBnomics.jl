@@ -98,7 +98,7 @@ To see the available parameters, visit the website <a href="https://curl.haxx.se
 h = Dict(:proxy => "http://<proxy>:<port>");
 ```
 
-Regarding the functioning of **HTTP**, you might need to modify another option to change the db/editor.nomics.world url from 'https://' to 'http://' (*https://github.com/JuliaWeb/HTTP.jl/pull/390*) :
+Regarding the functioning of **HTTP.jl**, you might need to modify another option to change the db/editor.nomics.world url from *https://* to *http://* (see https://github.com/JuliaWeb/HTTP.jl/pull/390) :
 ```julia
 DBnomics.options("secure", false);
 ```
@@ -229,4 +229,4 @@ to_timeseries(rdb("IMF", "CPI", mask = "M.DE+FR.PCPIEC_WT"))
 ```
 
 ## P.S.
-Visit <a href="https://db.nomics.world/" target="_blank">https://db.nomics.world/</a> :bar_chart: !
+Visit <a href="https://db.nomics.world/" target="_blank">https://db.nomics.world/</a> !
