@@ -665,10 +665,12 @@ end
 #-------------------------------------------------------------------------------
 # original_value_to_string
 function original_value_to_string!(x::DataFrames.DataFrame, y)
-    if isa(y, Any)
-        try (y = string(y)) catch; end
-    elseif isa(y, Array{Any,1})
-        try (y = string.(y)) catch; end
+    y = if isa(y, Array{Any,1})
+        try string.(y) catch; y end
+    elseif isa(y, Any)
+        try string(y) catch; y end
+    else
+        y
     end
     x[selectop, :original_value] = y
     nothing
