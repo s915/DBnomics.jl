@@ -330,10 +330,10 @@ function rdb_by_api_link(
             )
 
             if suffix != ""
-                DBdata[Symbol(addcol)] = ifelse.(
-                    isa.(DBdata[Symbol(newcol)], Missing),
-                    DBdata[Symbol(addcol)],
-                    DBdata[Symbol(newcol)]
+                DBdata[selectop, Symbol(addcol)] = ifelse.(
+                    isa.(DBdata[selectop, Symbol(newcol)], Missing),
+                    DBdata[selectop, Symbol(addcol)],
+                    DBdata[selectop, Symbol(newcol)]
                 )
                 df_delete_col!(DBdata, Symbol(newcol))
             end

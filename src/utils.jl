@@ -468,11 +468,13 @@ end
 
 #-------------------------------------------------------------------------------
 # remove_provider
+remove_provider!(x::Nothing) = nothing
 function remove_provider!(x::Array)
     map(x) do u
         u[1] = replace(u[1], r".*/" => "")
         u
     end
+    nothing
 end
 
 #-------------------------------------------------------------------------------
