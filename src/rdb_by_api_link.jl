@@ -122,9 +122,24 @@ function rdb_by_api_link(
         additional_geo_mapping = get_geo_names(DBdata, additional_geo_column)
         remove_provider!(additional_geo_column)
         # Check coherence
-        if !isa(additional_geo_column, Nothing) & !isa(additional_geo_mapping, Nothing)
+        if isa(additional_geo_column, Nothing) | isa(additional_geo_mapping, Nothing)
+            additional_geo_column = additional_geo_mapping = nothing
+        else
+            keep = []
             if length(additional_geo_column) != length(additional_geo_mapping)
                 additional_geo_column = additional_geo_mapping = nothing
+            else
+                for iaddg in 1:length(additional_geo_column)
+                    if !isa(additional_geo_column[iaddg], Nothing) & !isa(additional_geo_mapping[iaddg], Nothing)
+                        push!(keep, iaddg)
+                    end
+                end
+            end
+            if length(keep) == 0
+                additional_geo_column = additional_geo_mapping = nothing
+            else
+                additional_geo_column = additional_geo_column[keep]
+                additional_geo_mapping = additional_geo_mapping[keep]
             end
         end
     end
