@@ -21,18 +21,18 @@ the region, the website, etc.
 - `curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config`: (default `nothing`)
   If not `nothing`, it is used to configure a proxy connection. This
   configuration is passed to the keyword arguments of the function `HTTP.get` of
-  the package *HTTP*.
+  the package **HTTP.jl**.
 - `kwargs...`: Keyword arguments to be passed to `HTTP.get`.
 
 # Examples
 ```jldoctest
-julia> rdb_providers()
+julia> rdb_providers();
 
-julia> rdb_providers(true)
+julia> rdb_providers(true);
 
-julia> rdb_providers(use_readlines = true)
+julia> rdb_providers(use_readlines = true);
 
-julia> rdb_providers(curl_config = Dict(:proxy => "http://<proxy>:<port>"))
+julia> rdb_providers(curl_config = Dict(:proxy => "http://<proxy>:<port>"));
 
 # Regarding the functioning of HTTP.jl, you might need to modify another option
 # It will change the url from https:// to http://

@@ -1,6 +1,6 @@
 # DBnomics.jl
 
-## DBnomics Julia client (Julia version &ge; 0.7)
+## DBnomics Julia client
 
 This package provides you access to DBnomics data series. DBnomics is an open-source project with the goal of aggregating the world's economic data in one location, free of charge to the public. DBnomics covers hundreds of millions of series from international and national institutions (Eurostat, World Bank, IMF, ...).
 
@@ -17,7 +17,7 @@ or install the github version with :
 add https://github.com/s915/DBnomics.jl
 ```
 
-All the functions, and their names, are derived from the R package <a href="https://github.com/dbnomics/rdbnomics" target="_blank"><b>rdbnomics</b></a>.
+All the functions, and their names, are derived from the R package <a href="https://github.com/dbnomics/rdbnomics" target="_blank"><b>rdbnomics</b></a> which I also maintain.
 
 ## Examples
 Fetch time series by `ids` :
@@ -92,13 +92,14 @@ When using the functions `rdb` or `rdb_...`, if you come across an error concern
 2. using the functions `readlines` and `download` if you have problem with `HTTP.get`.
 
 ### Configure **curl** to use a specific and authorized proxy
-In **DBnomics**, by default the function `HTTP.get` or `HTTP.post` is used to fetch the data. If a specific proxy must be used, it is possible to define it permanently with the package global variable `curl_config` or on the fly through the argument `curl_config`. In that way the object is passed to the keyword arguments of the `HTTP.get` or `HTTP.post` function.  
-To see the available parameters, visit the website <a href="https://curl.haxx.se/libcurl/c/curl_easy_setopt.html" target="_blank">https://curl.haxx.se/libcurl/c/curl_easy_setopt.html</a>. Once they are chosen, you define the curl object as follows :
+In **DBnomics.jl**, by default the function `HTTP.get` or `HTTP.post` are used to fetch the data. If a specific proxy must be used, it is possible to define it permanently with the package global variable `curl_config` or on the fly through the argument `curl_config`. In that way the object is passed to the keyword arguments of the function `HTTP.get` or `HTTP.post`.  
+To see the available parameters, visit the website <a href="https://curl.haxx.se/libcurl/c/curl_easy_setopt.html" target="_blank">https://curl.haxx.se/libcurl/c/curl_easy_setopt.html</a>.  
+Once they are chosen, you define the curl object as follows :
 ```julia
 h = Dict(:proxy => "http://<proxy>:<port>");
 ```
 
-Regarding the functioning of **HTTP.jl**, you might need to modify another option to change the db/editor.nomics.world url from *https://* to *http://* (see https://github.com/JuliaWeb/HTTP.jl/pull/390) :
+Regarding the functioning of **HTTP.jl**, you might need to modify another option to change the *db/editor.nomics.world* url from *https://* to *http://* (see https://github.com/JuliaWeb/HTTP.jl/pull/390) :
 ```julia
 DBnomics.options("secure", false);
 ```
@@ -108,7 +109,7 @@ The curl connection can be set up for a session by modifying the following packa
 ```julia
 DBnomics.options("curl_config", h);
 ```
-After configuration, just use the standard functions of **DBnomics** e.g. :
+After configuration, just use the standard functions of **DBnomics.jl** e.g. :
 ```julia
 df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN");
 ```
@@ -124,7 +125,7 @@ df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN", curl_config = h);
 ```
 
 ### Use the standard functions `readlines` and `download`
-To retrieve the data **DBnomics** can also use the standard functions `readlines` and `download`.
+To retrieve the data **DBnomics.jl** can also use the standard functions `readlines` and `download`.
 
 #### Set the connection up for a session
 To activate this feature for a session, you need to enable an option of the package :
@@ -158,9 +159,11 @@ filters = Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthl
 df = rdb(ids = ["AMECO/ZUTN/EA19.1.0.0.0.ZUTN", "AMECO/ZUTN/DNK.1.0.0.0.ZUTN"], filters = filters);
 ```
 
-If you want to apply more than one filter, the `filters` argument will be a list of valid filters:
+If you want to apply more than one filter, the `filters` argument will be a Tuple of valid filters:
 ```julia
-filters = (Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "spline")), Dict(:code => "aggregate", :parameters => Dict(:frequency => "bi-annual", :method => "end_of_period")));
+filter1 = Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "spline"));
+filter2 = Dict(:code => "aggregate", :parameters => Dict(:frequency => "bi-annual", :method => "end_of_period"));
+filters = (filter1, filter2);
 
 df = rdb(ids = ["AMECO/ZUTN/EA19.1.0.0.0.ZUTN", "AMECO/ZUTN/DNK.1.0.0.0.ZUTN"], filters = filters);
 ```
@@ -175,7 +178,7 @@ The content of two columns are modified:
 - `series_code`: same as before for original series, but the suffix `_filtered` is added for filtered series.
 - `series_name`: same as before for original series, but the suffix ` (filtered)` is added for filtered series.
 
-## Transform the `DataFrame` object into a `TimeArray` object (Julia &ge; 0.7)
+## Transform the `DataFrame` object into a `TimeArray` object
 For some analysis, it is more convenient to have a `TimeArray` object instead of a `DataFrame` object. To transform
 it, you can use the following functions :
 ```julia
@@ -186,9 +189,9 @@ using TimeSeries
 function to_namedtuples(x::DataFrames.DataFrame)
     nm = names(x)
     try
-        vl = [x[:, col] for col in names(x)]
-    catch
         vl = [x[!, col] for col in names(x)]
+    catch
+        vl = [x[:, col] for col in names(x)]
     end
     nm = tuple(nm...)
     vl = tuple(vl...)
@@ -207,25 +210,25 @@ function to_timeseries(
 end
 
 rdb("IMF", "CPI", mask = "M.DE+FR.PCPIEC_WT")
-#> 570×13 DataFrame. Omitted printing of 9 columns
-#> │ Row │ @frequency │ dataset_code │ dataset_name               │ indexed_at                    │
-#> │     │ String     │ String       │ String                     │ TimeZones.ZonedDateTime       │
-#> ├─────┼────────────┼──────────────┼────────────────────────────┼───────────────────────────────┤
-#> │ 1   │ monthly    │ CPI          │ Consumer Price Index (CPI) │ 2019-05-18T02:48:55.708+00:00 │
-#> │ 2   │ monthly    │ CPI          │ Consumer Price Index (CPI) │ 2019-05-18T02:48:55.708+00:00 │
-#> │ ... │ ...        │ ...          │ ...                        │ ...                           │
-#> │ 569 │ monthly    │ CPI          │ Consumer Price Index (CPI) │ 2019-05-18T02:48:55.708+00:00 │
-#> │ 570 │ monthly    │ CPI          │ Consumer Price Index (CPI) │ 2019-05-18T02:48:55.708+00:00 │
+#> 580×17 DataFrame. Omitted printing of 12 columns
+#> │ Row │ @frequency │ dataset_code │ dataset_name               │ FREQ   │ Frequency │
+#> │     │ String     │ String       │ String                     │ String │ String    │
+#> ├─────┼────────────┼──────────────┼────────────────────────────┼────────┼───────────┼
+#> │ 1   │ monthly    │ CPI          │ Consumer Price Index (CPI) │ M      │ Monthly   │
+#> │ 2   │ monthly    │ CPI          │ Consumer Price Index (CPI) │ M      │ Monthly   │
+#> │ ... │ ...        │ ...          │ ...                        │ ...    │ ...       │
+#> │ 579 │ monthly    │ CPI          │ Consumer Price Index (CPI) │ M      │ Monthly   │
+#> │ 580 │ monthly    │ CPI          │ Consumer Price Index (CPI) │ M      │ Monthly   │
 
 to_timeseries(rdb("IMF", "CPI", mask = "M.DE+FR.PCPIEC_WT"))
-#> 291×2 TimeArray{Union{Missing, Float64},2,Date,Array{Union{Missing, Float64},2}} 1995-01-01 to 2019-03-01
+#> 296×2 TimeArray{Union{Missing, Float64},2,Date,Array{Union{Missing, Float64},2}} 1995-01-01 to 2019-08-01
 #> │            │ M.DE.PCPIEC_WT │ M.FR.PCPIEC_WT │
 #> ├────────────┼────────────────┼────────────────┤
 #> │ 1995-01-01 │ missing        │ 20.0           │
 #> │ 1995-02-01 │ missing        │ 20.0           │
 #> │ ...        │ ...            │ ...            │
-#> │ 2019-02-01 │ 30.1           │ 25.8           │
-#> │ 2019-03-01 │ 30.1           │ 25.8           │
+#> │ 2019-07-01 │ 30.1           │ 25.8           │
+#> │ 2019-08-01 │ 30.1           │ 25.8           │
 ```
 
 ## P.S.

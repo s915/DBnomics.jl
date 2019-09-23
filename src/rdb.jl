@@ -32,7 +32,7 @@ the arguments names can be dropped. The `mask` will be passed through `mask_arg`
 - `ids::Union{Array, String, Nothing} = nothing`: DBnomics code of one or several series.
 - `dimensions::Union{Dict, NamedTuple, String, Nothing} = nothing`: DBnomics code of one
   or several dimensions in the specified provider and dataset. If it is a `Dict` or a
-  `NamedTuple`, then then function `json` (from the package **JSON**) is applied to
+  `NamedTuple`, then then function `json` (from the package **JSON.jl**) is applied to
   generate the json object.
 - `mask::Union{String, Nothing} = nothing`: DBnomics code of one or several masks in
   the specified provider and dataset.
@@ -41,10 +41,10 @@ the arguments names can be dropped. The `mask` will be passed through `mask_arg`
 - `curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config`: (default `nothing`)
   If not `nothing`, it is used to configure a proxy connection. This
   configuration is passed to the keyword arguments of the function `HTTP.get` or `HTTP.post` of
-  the package *HTTP*.
+  the package **HTTP.jl**.
 - `filters::Union{Nothing, Dict, Tuple} = DBnomics.filters`: (default `nothing`)
   This argument must be a `Dict` for one filter because the function `json` of the
-  package *JSON* is used before sending the request to the server. For multiple
+  package **JSON.jl** is used before sending the request to the server. For multiple
   filters, you have to provide a `Tuple` of valid filters (see examples).
   A valid filter is a `Dict` with a key `code` which value is a character string,
   and a key `parameters` which value is a `Dict` with keys `frequency`
@@ -124,10 +124,14 @@ julia> filters = Dict(:code => "interpolate", :parameters => Dict(:frequency => 
 julia> df1 = rdb(ids = ["IMF/WEO/ABW.BCA", "IMF/WEO/ABW.BCA_NGDPD"], filters = filters);
 
 # For two filters
-julia> filters = (Dict(:code => "interpolate", :parameters => Dict(:frequency => "quarterly", :method => "spline")), Dict(:code => "aggregate", :parameters => Dict(:frequency => "annual", :method => "average")));
+julia> filter1 = Dict(:code => "interpolate", :parameters => Dict(:frequency => "quarterly", :method => "spline"));
+julia> filter2 = Dict(:code => "aggregate", :parameters => Dict(:frequency => "annual", :method => "average"));
+julia> filters = (filter1, filter2);
 julia> df1 = rdb(ids = ["IMF/WEO/ABW.BCA", "IMF/WEO/ABW.BCA_NGDPD"], filters = filters);
 
-julia> filters = (Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "linear")), Dict(:code => "x13", :parameters => nothing));
+julia> filter1 = Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "linear"));
+julia> filter2 = Dict(:code => "x13", :parameters => nothing);
+julia> filters = (filter1, filter2);
 julia> df1 = rdb("ECB/EXR/A.AUD.EUR.SP00.A", filters = filters);
 ```
 """

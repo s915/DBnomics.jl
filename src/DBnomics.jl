@@ -1,4 +1,7 @@
 module DBnomics
+    # Visit <https://db.nomics.world>
+    println("Visit <https://db.nomics.world>.")
+
     #---------------------------------------------------------------------------
     # Julia version smaller than 1.2.0
     version12 = (VERSION >= VersionNumber("0.7.0")) & (VERSION < VersionNumber("1.2.0"));
@@ -10,8 +13,8 @@ module DBnomics
         JSON_version = Pkg.installed()["JSON"] >= VersionNumber("0.21.0")
         if Parsers_version & JSON_version
             error(
-                "The package version of JSON must be 0.20.0 because of the " *
-                "version of Parsers." *
+                "The package version of JSON.jl must be 0.20.0 because of the " *
+                "version of Parsers.jl." *
                 "\n" *
                 """Please run "add JSON@0.20.0" in the package manager."""
             )

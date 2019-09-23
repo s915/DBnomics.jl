@@ -688,9 +688,3 @@ function original_value_to_string!(x::DataFrames.DataFrame, y)
     x[selectop, :original_value] = y
     nothing
 end
-
-#-------------------------------------------------------------------------------
-# JuliaDBtable
-# function JuliaDBtable(x::Dict)
-#     table((; value_to_array(key_to_symbol(x))...))
-# end
