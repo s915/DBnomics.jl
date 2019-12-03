@@ -2,7 +2,7 @@ name = "DBnomics"
 uuid = "748a5540-242a-11e9-3d63-bf3149dae578"
 license = "AGPL-3"
 authors = ["Sebastien GALAIS <s915.stem@gmail.com>"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"

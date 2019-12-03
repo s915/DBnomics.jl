@@ -1,3 +1,7 @@
+# Version 0.2.1
+
+* New argument 'query' for function `rdb()`.
+
 # Version 0.2.0
 
 * New filters tool from <https://editor.nomics.world/filters>.

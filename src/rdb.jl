@@ -36,6 +36,8 @@ the arguments names can be dropped. The `mask` will be passed through `mask_arg`
   generate the json object.
 - `mask::Union{String, Nothing} = nothing`: DBnomics code of one or several masks in
   the specified provider and dataset.
+- `query::Union{String, Nothing} = nothing`: A query to filter/select series from a
+  provider's dataset.
 - `use_readlines::Bool = DBnomics.use_readlines`: (default `false`) If `true`, then
   the data are requested and read with the function `readlines`.
 - `curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config`: (default `nothing`)
@@ -98,6 +100,12 @@ julia> df3 = rdb("IMF", "CPI", mask = "M..PCPIEC_WT");
 julia> df4 = rdb("IMF", "CPI", mask = "M..PCPIEC_IX+PCPIA_IX");
 
 
+## By query
+julia> df1 = rdb("IMF", "WEO", query = "France current account balance percent");
+
+julia> df2 = rdb("IMF", "WEO", query = "current account balance percent");
+
+
 ## Use proxy with curl
 julia> h = Dict(:proxy => "http://<proxy>:<port>");
 
@@ -142,6 +150,7 @@ function rdb(
     ids::Union{Array, String, Nothing} = nothing,
     dimensions::Union{Dict, NamedTuple, String, Nothing} = nothing,
     mask::Union{String, Nothing} = nothing,
+    query::Union{String, Nothing} = nothing,
     use_readlines::Bool = DBnomics.use_readlines,
     curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config,
     filters::Union{Nothing, Dict, Tuple} = DBnomics.filters,
@@ -176,6 +185,9 @@ function rdb(
 
     mask_arg_null = isa(mask_arg, Nothing)
     mask_arg_not_null = !mask_arg_null
+
+    query_null = isa(query, Nothing)
+    query_not_null = !query_null
 
     # provider_code is actually ids
     if (
@@ -258,10 +270,8 @@ function rdb(
     if (ids_not_null)
         if (provider_code_not_null || dataset_code_not_null)
             if (DBnomics.verbose_warning)
-                warn(
-                    "When you filter with 'ids', " *
+                @warn "When you filter with 'ids', " *
                     "'provider_code' and 'dataset_code' are not considered."
-                )
             end
         end
   
@@ -286,6 +296,36 @@ function rdb(
             filters = filters, kwargs...
         )
     end
+
+    # By query
+    if (query_not_null)
+        if (provider_code_null || dataset_code_null)
+            error(
+                "When you filter with a 'query', you must specifiy " *
+                "'provider_code' and 'dataset_code' as arguments of the " *
+                "function."
+            )
+        end
+
+        if (DBnomics.verbose_warning)
+            if (query == "")
+                @warn "Your 'query' is empty, the entire dataset " *
+                    provider_code * "/" * dataset_code *
+                    " will be downloaded. It can be long !"
+            end
+        end
+
+        link = api_base_url * "/" * provider_code * "/" * dataset_code *
+          "?q=" * HTTP.escapeuri(query) *
+          (metadata ? "&" : ("&metadata=" * string(Int64(metadata)), "&")) *
+          "observations=1"
+
+        return rdb_by_api_link(
+            link;
+            use_readlines = use_readlines, curl_config = curl_config,
+            filters = filters, kwargs...
+        )
+    end
   
-    error("Please provide correct 'dimensions', 'mask' or 'ids'.")
+    error("Please provide correct 'dimensions', 'mask', 'ids' or 'query'.")
 end

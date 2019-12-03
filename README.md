@@ -79,6 +79,15 @@ df3 = rdb("WB", "DB", dimensions = Dict(:country => ["DZ", "PE"], :indicator => 
 df3 = rdb("WB", "DB", dimensions = (country = ["DZ", "PE"], indicator = ["ENF.CONT.COEN.COST.ZS", "IC.REG.COST.PC.FE.ZS"]));
 ```
 
+Fetch time series with a `query`:
+```julia
+# Fetch one series from dataset 'WEO by countries' (WEO) of IMF provider:
+df1 = rdb("IMF", "WEO", query = "France current account balance percent");
+
+# Fetch series from dataset 'WEO by countries' (WEO) of IMF provider:
+df2 = rdb("IMF", "WEO", query = "current account balance percent");
+```
+
 Fetch one series from the dataset 'Doing Business' of WB provider with the link :
 ```julia
 df1 = rdb_by_api_link("https://api.db.nomics.world/v22/series/WB/DB?dimensions=%7B%22country%22%3A%5B%22FR%22%2C%22IT%22%2C%22ES%22%5D%7D&q=IC.REG.PROC.FE.NO&observations=1&format=json&align_periods=1&offset=0&facets=0");

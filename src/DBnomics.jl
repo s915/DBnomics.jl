@@ -78,6 +78,13 @@ module DBnomics
         end
     end
 
+    # default_timezone
+    default_timezone = try
+        TimeZones.TimeZone("GMT")
+    catch
+        TimeZones.TimeZone("UTC")
+    end
+
     #---------------------------------------------------------------------------
     # Global variables.
     # Julia version lower than 1.2.0
@@ -99,7 +106,7 @@ module DBnomics
     # Sleep time between tries
     global sleep_run = 1
     # Timezone
-    global timestamp_tz = TimeZones.tz"GMT"
+    global timestamp_tz = default_timezone
     # Number of tries of get_data
     global try_run = 2
     # Warning for ids in rdb
@@ -188,6 +195,10 @@ module DBnomics
             if !isa(tmp, Bool)
                 error("'secure' must be a Bool.")
             end
+        elseif String(s) == "filters"
+            if !isa(tmp, Union{Nothing, Dict, Tuple})
+               error("'filters' must be a Dict, a Tuple or Nothing.") 
+            end
         else
             error("Invalid option name.")
         end
@@ -205,7 +216,11 @@ module DBnomics
         DBnomics.options("use_readlines", false)
         DBnomics.options("rdb_no_arg", true)
         DBnomics.options("sleep_run", 1)
-        DBnomics.options("timestamp_tz", TimeZones.tz"GMT")
+        try
+            DBnomics.options("timestamp_tz", TimeZones.TimeZone("GMT"))
+        catch
+            DBnomics.options("timestamp_tz", TimeZones.TimeZone("UTC"))
+        end
         DBnomics.options("try_run", 2)
         DBnomics.options("verbose_warning", true)
         DBnomics.options("metadata", true)
