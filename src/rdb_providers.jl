@@ -57,15 +57,18 @@ function rdb_providers(
 
     providers = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
     providers = providers["providers"]["docs"]
-    providers = to_dataframe.(providers)
-    providers = concatenate_data(providers)
+    providers = to_dict.(providers)
+    providers = concatenate_dict(providers)
     change_type!(providers)
     transform_date_timestamp!(providers)
 
     if code
-        providers = providers[selectop, :code]
+        providers = providers[:code]
         providers = sort(providers)
+
+        return providers
     end
 
+    # Dict_to_JuliaDB(providers)
     providers
 end

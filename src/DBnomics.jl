@@ -7,23 +7,12 @@ module DBnomics
     version12 = (VERSION >= VersionNumber("0.7.0")) & (VERSION < VersionNumber("1.2.0"));
     # WARNING
     # For Julia v0.7, JSON version must be 0.20.0 because of Parsers
-    if VERSION < VersionNumber("1.0.0")
-        import Pkg
-        Parsers_version = Pkg.installed()["Parsers"] <= VersionNumber("0.3.0")
-        JSON_version = Pkg.installed()["JSON"] >= VersionNumber("0.21.0")
-        if Parsers_version & JSON_version
-            error(
-                "The package version of JSON.jl must be 0.20.0 because of the " *
-                "version of Parsers.jl." *
-                "\n" *
-                """Please run "add JSON@0.20.0" in the package manager."""
-            )
-        end
-    end
+    # If needed "add JSON@0.20.0" in the package manager.
 
     #---------------------------------------------------------------------------
     # Load packages.
-    using DataFrames
+    # using DataFrames
+    using JuliaDB
     import Dates
     import HTTP
     import JSON
@@ -31,52 +20,52 @@ module DBnomics
 
     #---------------------------------------------------------------------------
     # DataFrames version
-    df_test = DataFrame(A = 1, B = rand(1))
-    DataFrames019 = try (df_test[!, :A]; false) catch; true end
+    # df_test = DataFrame(A = 1, B = rand(1))
+    # DataFrames019 = try (df_test[!, :A]; false) catch; true end
 
     # df_delete_col
-    if DataFrames019
-        function df_delete_col!(x::DataFrames.DataFrame, y)
-            deletecols!(x, y)
-            nothing
-        end
-    else
-        function df_delete_col!(x::DataFrames.DataFrame, y)
-            select!(x, Not(y))
-            nothing
-        end
-    end
+    # if DataFrames019
+    #     function df_delete_col!(x::DataFrames.DataFrame, y)
+    #         deletecols!(x, y)
+    #         nothing
+    #     end
+    # else
+    #     function df_delete_col!(x::DataFrames.DataFrame, y)
+    #         select!(x, Not(y))
+    #         nothing
+    #     end
+    # end
 
     # selectop
-    selectop = DataFrames019 ? (:) : (!)
+    # selectop = DataFrames019 ? (:) : (!)
 
     # df_new_col
-    if DataFrames019
-        function df_new_col!(x::DataFrames.DataFrame, col::Symbol, y)
-            x[:, col] = y
-            nothing
-        end
-    else
-        function df_new_col!(x::DataFrames.DataFrame, col::Symbol, y)
-            x[!, col] .= y
-            nothing
-        end
-    end
+    # if DataFrames019
+    #     function df_new_col!(x::DataFrames.DataFrame, col::Symbol, y)
+    #         x[:, col] = y
+    #         nothing
+    #     end
+    # else
+    #     function df_new_col!(x::DataFrames.DataFrame, col::Symbol, y)
+    #         x[!, col] .= y
+    #         nothing
+    #     end
+    # end
 
     # df_complete_missing
-    if DataFrames019
-        function df_complete_missing!(x::DataFrames.DataFrame, add::Union{Symbol, Array{Symbol, 1}})
-            x[:, add] = missing
-            nothing
-        end
-    else
-        function df_complete_missing!(x::DataFrames.DataFrame, add::Union{Symbol, Array{Symbol, 1}})
-            for iadd in add
-                x[!, iadd] .= Ref(missing)
-            end
-            nothing
-        end
-    end
+    # if DataFrames019
+    #     function df_complete_missing!(x::DataFrames.DataFrame, add::Union{Symbol, Array{Symbol, 1}})
+    #         x[:, add] = missing
+    #         nothing
+    #     end
+    # else
+    #     function df_complete_missing!(x::DataFrames.DataFrame, add::Union{Symbol, Array{Symbol, 1}})
+    #         for iadd in add
+    #             x[!, iadd] .= Ref(missing)
+    #         end
+    #         nothing
+    #     end
+    # end
 
     # default_timezone
     default_timezone = try
@@ -90,7 +79,7 @@ module DBnomics
     # Julia version lower than 1.2.0
     global version12 = version12
     # DataFrames version lower than 0.19
-    global DataFrames019 = DataFrames019
+    # global DataFrames019 = DataFrames019
     # API version
     global api_version = 22
     # API base url
@@ -236,11 +225,16 @@ module DBnomics
     #---------------------------------------------------------------------------
     # Functions
     include("utils.jl")
+    # include("C:/programming/Julia/packages/DBnomics/src/utils.jl")
+    include("dot_rdb.jl")
     include("rdb_by_api_link.jl")
     include("rdb.jl")
     include("rdb_last_updates.jl")
     include("rdb_providers.jl")
 
+    #---------------------------------------------------------------------------
+    @deprecate rdb_by_api_link(api_link::String) rdb(api_link::Union{String, Nothing})
+    
     #---------------------------------------------------------------------------
     export rdb_by_api_link, rdb, rdb_last_updates, rdb_providers
 end # module

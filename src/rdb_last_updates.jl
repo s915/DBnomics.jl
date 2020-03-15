@@ -68,19 +68,21 @@ function rdb_last_updates(
     updates = map(iter) do u
         api_link = api_base_url * "/v" * string(api_version) *
             "/last-updates?datasets.offset=" * string(Int(u * limit))
+        
         tmp_up = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
         tmp_up = tmp_up["datasets"]["docs"]
-        tmp_up = to_dataframe.(tmp_up)
-        tmp_up = concatenate_data(tmp_up)
+        tmp_up = concatenate_dict(tmp_up)
         change_type!(tmp_up)
         transform_date_timestamp!(tmp_up)
+        
         tmp_up
     end
 
-    if isa(updates, Array{DataFrame, 1})
-        updates = concatenate_data(updates)
+    if isa(updates, Array{Dict{Symbol,Array{T,1} where T}, 1})
+        updates = concatenate_dict(updates)
         change_type!(updates)
     end
 
+    # Dict_to_JuliaDB(updates)
     updates
 end

@@ -38,6 +38,7 @@ the arguments names can be dropped. The `mask` will be passed through `mask_arg`
   the specified provider and dataset.
 - `query::Union{String, Nothing} = nothing`: A query to filter/select series from a
   provider's dataset.
+- `api_link::Union{String, Nothing} = nothing`: DBnomics API link of the search.
 - `use_readlines::Bool = DBnomics.use_readlines`: (default `false`) If `true`, then
   the data are requested and read with the function `readlines`.
 - `curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config`: (default `nothing`)
@@ -151,6 +152,7 @@ function rdb(
     dimensions::Union{Dict, NamedTuple, String, Nothing} = nothing,
     mask::Union{String, Nothing} = nothing,
     query::Union{String, Nothing} = nothing,
+    api_link::Union{String, Nothing} = nothing,
     use_readlines::Bool = DBnomics.use_readlines,
     curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config,
     filters::Union{Nothing, Dict, Tuple} = DBnomics.filters,
@@ -237,7 +239,7 @@ function rdb(
             (metadata ? "?" : ("?metadata=" * string(Int64(metadata)), "&")) *
             "&observations=1&dimensions=" * dimensions
     
-        return rdb_by_api_link(
+        return DBnomics.dot_rdb(
             link;
             use_readlines = use_readlines, curl_config = curl_config,
             filters = filters, kwargs...
@@ -259,7 +261,7 @@ function rdb(
             (metadata ? "?" : ("?metadata=" * string(Int64(metadata)), "&")) *
             "&observations=1"
   
-        return rdb_by_api_link(
+        return DBnomics.dot_rdb(
             link;
             use_readlines = use_readlines, curl_config = curl_config,
             filters = filters, kwargs...
@@ -290,7 +292,7 @@ function rdb(
             "&observations=1&series_ids=" *
             reduce((u, w) -> u * "," * w, ids)
         
-        return rdb_by_api_link(
+        return DBnomics.dot_rdb(
             link;
             use_readlines = use_readlines, curl_config = curl_config,
             filters = filters, kwargs...
@@ -320,7 +322,7 @@ function rdb(
           (metadata ? "&" : ("&metadata=" * string(Int64(metadata)), "&")) *
           "observations=1"
 
-        return rdb_by_api_link(
+        return DBnomics.dot_rdb(
             link;
             use_readlines = use_readlines, curl_config = curl_config,
             filters = filters, kwargs...
