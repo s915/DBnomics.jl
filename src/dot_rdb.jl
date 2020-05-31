@@ -9,10 +9,15 @@ function dot_rdb(
         curl_config = kwargs
     end
 
-filter1 = Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "linear"));
-filter2 = Dict(:code => "x13", :parameters => nothing);
-filters = (filter1, filter2);
-api_link = "https://api.db.nomics.world/v22/series?observations=1&series_ids=ECB/EXR/A.AUD.EUR.SP00.A";
+# filter1 = Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "linear"));
+# filter2 = Dict(:code => "x13", :parameters => nothing);
+# filters = (filter1, filter2);
+# api_link = "https://api.db.nomics.world/v22/series?observations=1&series_ids=ECB/EXR/A.AUD.EUR.SP00.A";
+
+filters = nothing;
+# api_link = "https://api.db.nomics.world/v22/series/IMF/IFS?observations=1&dimensions={\"FREQ\":[\"M\"],\"REF_AREA\":[\"AF\",\"AL\",\"DZ\",\"AO\",\"AI\"]}";
+api_link = "https://api.db.nomics.world/v22/series/IMF/IFS?observations=1&dimensions={\"FREQ\":[\"M\"],\"REF_AREA\":[\"AF\",\"AL\",\"DZ\"]}";
+
 
     # Checking 'filters'
     if !isa(filters, Nothing)
@@ -43,71 +48,48 @@ api_link = "https://api.db.nomics.world/v22/series?observations=1&series_ids=ECB
     # api_link = "https://api.db.nomics.world/v22/series/IMF/BOP?limit=1000&offset=0&q=ILPDCB_BP6_USD&observations=1&align_periods=1&dimensions=%7B%22FREQ%22%3A%5B%22A%22%5D%7D"
     # api_link = "https://api.db.nomics.world/v22/series/FED/H41?limit=100&offset=0&q=&observations=1&align_periods=1&dimensions=%7B%22CATEGORY%22%3A%5B%22LIABCAP%22%5D%7D"
     # DBdata = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
-    DBdata = DBnomics.get_data(api_link, false, 0, nothing, nothing);
+    DBdata = get_data(api_link, false, 0, nothing, nothing);
 
+    # api_version::String = DBdata["_meta"]["version"]
+    # num_found::Int64 = DBdata["series"]["num_found"]
+    # limit::Int64 = DBdata["series"]["limit"] 
     api_version = DBdata["_meta"]["version"]
-    
     num_found = DBdata["series"]["num_found"]
     limit = DBdata["series"]["limit"]
 
     # Additional informations to translate geo, freq, ...
-    # if !DBnomics.translate_codes
-        additional_geo_column = additional_geo_mapping = nothing
-    # else
-    #     additional_geo_column = get_geo_colname(DBdata)
-    #     # additional_geo_column = DBnomics.get_geo_colname(DBdata);
-    #     additional_geo_mapping = get_geo_names(DBdata, additional_geo_column)
-    #     # additional_geo_mapping = DBnomics.get_geo_names(DBdata, additional_geo_column);
-    #     remove_provider!(additional_geo_column)
-    #     # Check coherence
-    #     if isa(additional_geo_column, Nothing) | isa(additional_geo_mapping, Nothing)
-    #         additional_geo_column = additional_geo_mapping = nothing
-    #     else
-    #         keep = []
-    #         if length(additional_geo_column) != length(additional_geo_mapping)
-    #             additional_geo_column = additional_geo_mapping = nothing
-    #         else
-    #             for iaddg in 1:length(additional_geo_column)
-    #                 if !isa(additional_geo_column[iaddg], Nothing) & !isa(additional_geo_mapping[iaddg], Nothing)
-    #                     push!(keep, iaddg)
-    #                 end
-    #             end
-    #         end
-    #         if length(keep) == 0
-    #             additional_geo_column = additional_geo_mapping = nothing
-    #         else
-    #             additional_geo_column = additional_geo_column[keep]
-    #             additional_geo_mapping = additional_geo_mapping[keep]
-    #         end
-    #     end
-    # end
+    additional_geo_column, additional_geo_mapping = additional_info(DBdata)
 
     DBdata = DBdata["series"]["docs"]
     DBdata = clean_data(DBdata, true)
 
     if num_found > limit
+        # iter::UnitRange{Int64} = 1:Int(floor(num_found / limit))
         iter = 1:Int(floor(num_found / limit))
 
         if occursin(r"offset=", api_link)
             api_link = replace(api_link, r"\&offset=[0-9]+" => "")
             api_link = replace(api_link, r"\?offset=[0-9]+" => "")
         end
+        # sep::String = occursin(r"\?", api_link) ? "&" : "?"
         sep = occursin(r"\?", api_link) ? "&" : "?"
 
         DBdata2 = map(iter) do u
+            # link::String = api_link * sep * "offset=" * string(Int(u * limit))
             link = api_link * sep * "offset=" * string(Int(u * limit))
             # tmp_up = get_data(link, use_readlines, 0, nothing, nothing; curl_config...)
-            tmp_up = DBnomics.get_data(link, false, 0, nothing, nothing)
+            tmp_up = get_data(link, false, 0, nothing, nothing)
             tmp_up = tmp_up["series"]["docs"]
             clean_data(tmp_up, true)
         end
 
-        DBdata = [DBdata, DBdata2]
+        DBdata = [DBdata]
+        append!(DBdata, DBdata2)
 
         DBdata2 = nothing
     end
 
-    if isa(DBdata, Array{Dict{Symbol,Array{T,1} where T}, 1})
+    if isa(DBdata, Array{Dict{Symbol, Array{T, 1} where T}, 1})
         DBdata = concatenate_dict(DBdata)
     end
 
@@ -139,8 +121,7 @@ api_link = "https://api.db.nomics.world/v22/series?observations=1&series_ids=ECB
         # codes = unique(DBdata[selectop, :series_code])
         codes = unique(DBdata[:series_code])
 
-        DBlist = map(1:length(codes)) do u
-            x = codes[u]
+        DBlist = map(codes) do x
             # tmpdata = filter(row -> row.series_code == x, DBdata)
             tmpdata = select_dict(DBdata, :series_code, x)
 
@@ -173,19 +154,12 @@ api_link = "https://api.db.nomics.world/v22/series?observations=1&series_ids=ECB
               string(DBnomics.editor_version) * "/apply"
 
             # request = get_data(editor_link, false, 0, headers, body; curl_config...)
-            request = DBnomics.get_data(editor_link, false, 0, headers, body)
+            request = get_data(editor_link, false, 0, headers, body)
             request = request["filter_results"][1]["series"]
             request = clean_data([request], true)
 
             # Some columns from the original dataset will be replaced by the
             # filtered dataset
-            # remove_columns!(
-            #     tmpdata,
-            #     [
-            #         "@frequency", "original_period", "period", "value",
-            #         "original_value", "indexed_at"
-            #     ]
-            # )
             delete_dict!(
                 tmpdata,
                 [
@@ -195,13 +169,13 @@ api_link = "https://api.db.nomics.world/v22/series?observations=1&series_ids=ECB
             )
             if !isa(additional_geo_column, Nothing)
                 try
-                    cols_to_remove = map(u -> u[2], additional_geo_column)
-                    # remove_columns!(tmpdata, cols_to_remove)
+                    cols_to_remove = map(additional_geo_column) do u
+                        replace(string(u[1]), r".*\|" => "")
+                    end
                     delete_dict!(tmpdata, Symbol.(cols_to_remove))
                 catch
                 end
             end
-            # remove_columns!(tmpdata, "^observation", true)
             delete_dict!(tmpdata, "^observation", true)
             # The aim is to keep only unique informations
             tmpdata = Dict(k => unique(v) for (k, v) in tmpdata)
@@ -246,10 +220,10 @@ api_link = "https://api.db.nomics.world/v22/series?observations=1&series_ids=ECB
         # is set to 'character'
         type_DBdata_string = isa(DBdata[:original_period], Array{String,1})
         type_DBlist_string = isa(DBlist[:original_period], Array{String,1})
-        if type_DBdata_string & !type_DBlist_string
+        if type_DBdata_string && !type_DBlist_string
             DBlist[:original_period] = string.(DBlist[:original_period])
         end
-        if !type_DBdata_string & type_DBlist_string
+        if !type_DBdata_string && type_DBlist_string
             DBdata[:original_period] = string.(DBdata[:original_period])
         end
 
@@ -268,41 +242,12 @@ api_link = "https://api.db.nomics.world/v22/series?observations=1&series_ids=ECB
     
         DBdata = [DBdata, DBlist]
         DBdata = concatenate_dict(DBdata)
-    end
+    end # filter
 
     # Additional informations translations
-    if !isa(additional_geo_column, Nothing) & !isa(additional_geo_mapping, Nothing)
-        for i = 1:length(additional_geo_mapping)
-            addcol = additional_geo_column[i][3]
-            suffix = ""
-            if Symbol(addcol) in names(DBdata)
-                suffix = "_add"
-                newcol = addcol * suffix
-                rename!(additional_geo_mapping[i], Symbol(addcol) => Symbol(newcol))
-            end
+    DBdata = additional_info_add(DBdata, additional_geo_column, additional_geo_mapping)
 
-            DBdata = join(
-                DBdata, additional_geo_mapping[i],
-                on = Symbol.(["dataset_code", additional_geo_column[i][2]]),
-                kind = :left
-            )
+    change_type!(DBdata, nothing, [:original_value])
 
-            if suffix != ""
-                DBdata[selectop, Symbol(addcol)] = ifelse.(
-                    isa.(DBdata[selectop, Symbol(newcol)], Missing),
-                    DBdata[selectop, Symbol(addcol)],
-                    DBdata[selectop, Symbol(newcol)]
-                )
-                df_delete_col!(DBdata, Symbol(newcol))
-            end
-        end
-    end
-
-    # We reorder the columns by their names
-    # permutecols!(
-    #     DBdata,
-    #     Symbol.(sort(string.(ckeys(DBdata)), by = lowercase))
-    # )
-
-    DBdata
+    df_return(DBdata)
 end

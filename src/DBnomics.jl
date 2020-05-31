@@ -3,70 +3,16 @@ module DBnomics
     println("Visit <https://db.nomics.world>.")
 
     #---------------------------------------------------------------------------
-    # Julia version smaller than 1.2.0
-    version12 = (VERSION >= VersionNumber("0.7.0")) & (VERSION < VersionNumber("1.2.0"));
-    # WARNING
-    # For Julia v0.7, JSON version must be 0.20.0 because of Parsers
-    # If needed "add JSON@0.20.0" in the package manager.
-
-    #---------------------------------------------------------------------------
     # Load packages.
-    # using DataFrames
-    using JuliaDB
+    using DataFrames
+    import DataStructures
     import Dates
     import HTTP
     import JSON
+    using Requires
     import TimeZones
 
     #---------------------------------------------------------------------------
-    # DataFrames version
-    # df_test = DataFrame(A = 1, B = rand(1))
-    # DataFrames019 = try (df_test[!, :A]; false) catch; true end
-
-    # df_delete_col
-    # if DataFrames019
-    #     function df_delete_col!(x::DataFrames.DataFrame, y)
-    #         deletecols!(x, y)
-    #         nothing
-    #     end
-    # else
-    #     function df_delete_col!(x::DataFrames.DataFrame, y)
-    #         select!(x, Not(y))
-    #         nothing
-    #     end
-    # end
-
-    # selectop
-    # selectop = DataFrames019 ? (:) : (!)
-
-    # df_new_col
-    # if DataFrames019
-    #     function df_new_col!(x::DataFrames.DataFrame, col::Symbol, y)
-    #         x[:, col] = y
-    #         nothing
-    #     end
-    # else
-    #     function df_new_col!(x::DataFrames.DataFrame, col::Symbol, y)
-    #         x[!, col] .= y
-    #         nothing
-    #     end
-    # end
-
-    # df_complete_missing
-    # if DataFrames019
-    #     function df_complete_missing!(x::DataFrames.DataFrame, add::Union{Symbol, Array{Symbol, 1}})
-    #         x[:, add] = missing
-    #         nothing
-    #     end
-    # else
-    #     function df_complete_missing!(x::DataFrames.DataFrame, add::Union{Symbol, Array{Symbol, 1}})
-    #         for iadd in add
-    #             x[!, iadd] .= Ref(missing)
-    #         end
-    #         nothing
-    #     end
-    # end
-
     # default_timezone
     default_timezone = try
         TimeZones.TimeZone("GMT")
@@ -76,10 +22,6 @@ module DBnomics
 
     #---------------------------------------------------------------------------
     # Global variables.
-    # Julia version lower than 1.2.0
-    global version12 = version12
-    # DataFrames version lower than 0.19
-    # global DataFrames019 = DataFrames019
     # API version
     global api_version = 22
     # API base url
@@ -112,6 +54,20 @@ module DBnomics
     global editor_version = 1
     # https connection
     global secure = true
+    # Progress bar for rdb_last_updates
+    global progress_bar_last_updates = false
+    # Progress bar for rdb_datasets
+    global progress_bar_datasets = false
+    # Progress bar for rdb_dimensions
+    global progress_bar_dimensions = false
+    # Progress bar for rdb_series
+    global progress_bar_series = false
+    # Use DataFrame
+    global returndf = true
+    # Only return number of series with rdb_series
+    global only_number_series = false
+    # Only first two series with rdb_series
+    global only_first_two = false
 
     # Modify global variables
     function options(s::AbstractString, v::Any)
@@ -186,7 +142,35 @@ module DBnomics
             end
         elseif String(s) == "filters"
             if !isa(tmp, Union{Nothing, Dict, Tuple})
-               error("'filters' must be a Dict, a Tuple or Nothing.") 
+               error("'filters' must be a Dict, a Tuple or Nothing.")
+            end
+        elseif String(s) == "progress_bar_last_updates"
+            if !isa(tmp, Bool)
+               error("'progress_bar_last_updates' must be a Bool.")
+            end
+        elseif String(s) == "progress_bar_datasets"
+            if !isa(tmp, Bool)
+               error("'progress_bar_datasets' must be a Bool.")
+            end
+        elseif String(s) == "progress_bar_dimensions"
+            if !isa(tmp, Bool)
+               error("'progress_bar_dimensions' must be a Bool.")
+            end
+        elseif String(s) == "progress_bar_series"
+            if !isa(tmp, Bool)
+               error("'progress_bar_series' must be a Bool.")
+            end
+        elseif String(s) == "returndf"
+            if !isa(tmp, Bool)
+               error("'returndf' must be a Bool.")
+            end
+        elseif String(s) == "only_number_series"
+            if !isa(tmp, Bool)
+               error("'only_number_series' must be a Bool.")
+            end
+        elseif String(s) == "only_first_two"
+            if !isa(tmp, Bool)
+               error("'only_first_two' must be a Bool.")
             end
         else
             error("Invalid option name.")
@@ -197,7 +181,7 @@ module DBnomics
         nothing
     end
 
-    function resetoptions()
+    function resetoptions()::Nothing
         DBnomics.options("api_version", 22)
         DBnomics.options("api_base_url", "https://api.db.nomics.world")
         DBnomics.options("curl_config", nothing)
@@ -218,23 +202,41 @@ module DBnomics
         DBnomics.options("editor_version", 1)
         DBnomics.options("editor_base_url", "https://editor.nomics.world")
         DBnomics.options("secure", true)
-
+        DBnomics.options("progress_bar_last_updates", false)
+        DBnomics.options("progress_bar_datasets", false)
+        DBnomics.options("progress_bar_dimensions", false)
+        DBnomics.options("progress_bar_series", false)
+        DBnomics.options("only_number_series", false)
+        DBnomics.options("only_first_two", false)
+        DBnomics.options("returndf", true)
         nothing
+    end
+
+    # If ProgressMeter is loaded, we use it
+    function __init__()
+        @require ProgressMeter="92933f4c-e287-5a05-a399-4b506db050ca" DBnomics.options("progress_bar_last_updates", true)
+        @require ProgressMeter="92933f4c-e287-5a05-a399-4b506db050ca" DBnomics.options("progress_bar_datasets", true)
+        @require ProgressMeter="92933f4c-e287-5a05-a399-4b506db050ca" DBnomics.options("progress_bar_dimensions", true)
+        @require ProgressMeter="92933f4c-e287-5a05-a399-4b506db050ca" DBnomics.options("progress_bar_series", true)
     end
 
     #---------------------------------------------------------------------------
     # Functions
     include("utils.jl")
-    # include("C:/programming/Julia/packages/DBnomics/src/utils.jl")
+    include("utils_DataFrames.jl")
     include("dot_rdb.jl")
     include("rdb_by_api_link.jl")
     include("rdb.jl")
     include("rdb_last_updates.jl")
     include("rdb_providers.jl")
+    include("rdb_datasets.jl")
+    include("rdb_dimensions.jl")
+    include("rdb_series.jl")
 
     #---------------------------------------------------------------------------
-    @deprecate rdb_by_api_link(api_link::String) rdb(api_link::Union{String, Nothing})
-    
+    # @deprecate rdb_by_api_link(api_link::String) rdb(api_link::Union{String, Nothing})
+
     #---------------------------------------------------------------------------
-    export rdb_by_api_link, rdb, rdb_last_updates, rdb_providers
+    export rdb_by_api_link, rdb, rdb_last_updates, rdb_providers, rdb_datasets
+    export rdb_dimensions, rdb_series
 end # module

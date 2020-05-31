@@ -159,37 +159,37 @@ function rdb(
     kwargs...
 )
     # Setting API url
-    api_base_url = DBnomics.api_base_url
+    api_base_url::String = DBnomics.api_base_url
   
     # Setting API version
-    api_version = DBnomics.api_version
+    api_version::Int64 = DBnomics.api_version
   
     # Setting API metadata
-    metadata = DBnomics.metadata
+    metadata::Bool = DBnomics.metadata
 
     api_base_url = api_base_url * "/v" * string(api_version) * "/series"
   
     # Checking arguments
-    provider_code_null = isa(provider_code, Nothing)
-    provider_code_not_null = !provider_code_null
+    provider_code_null::Bool = isa(provider_code, Nothing)
+    provider_code_not_null::Bool = !provider_code_null
   
-    dataset_code_null = isa(dataset_code, Nothing)
-    dataset_code_not_null = !dataset_code_null
+    dataset_code_null::Bool = isa(dataset_code, Nothing)
+    dataset_code_not_null::Bool = !dataset_code_null
   
-    dimensions_null = isa(dimensions, Nothing)
-    dimensions_not_null = !dimensions_null
+    dimensions_null::Bool = isa(dimensions, Nothing)
+    dimensions_not_null::Bool = !dimensions_null
     
-    mask_null = isa(mask, Nothing)
-    mask_not_null = !mask_null
+    mask_null::Bool = isa(mask, Nothing)
+    mask_not_null::Bool = !mask_null
     
-    ids_null = isa(ids, Nothing)
-    ids_not_null = !ids_null
+    ids_null::Bool = isa(ids, Nothing)
+    ids_not_null::Bool = !ids_null
 
-    mask_arg_null = isa(mask_arg, Nothing)
-    mask_arg_not_null = !mask_arg_null
+    mask_arg_null::Bool = isa(mask_arg, Nothing)
+    mask_arg_not_null::Bool = !mask_arg_null
 
-    query_null = isa(query, Nothing)
-    query_not_null = !query_null
+    query_null::Bool = isa(query, Nothing)
+    query_not_null::Bool = !query_null
 
     # provider_code is actually ids
     if (
