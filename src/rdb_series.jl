@@ -193,7 +193,10 @@ function rdb_series(
                         # Modifying link
                         tmp_api_link = api_link * sep * "offset=" * string(j * limit)
                         # Fetching data
-                        DBlist = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
+                        DBlist = get_data(
+                            api_link, use_readlines, 0, nothing, nothing;
+                            curl_config...
+                        )
                         
                         if DBnomics.progress_bar_series
                             ProgressMeter.next!(p)

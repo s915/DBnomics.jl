@@ -54,6 +54,8 @@ module DBnomics
     global editor_version = 1
     # https connection
     global secure = true
+    # Progress bar for dot_rdb
+    global progress_bar_dot = false
     # Progress bar for rdb_last_updates
     global progress_bar_last_updates = false
     # Progress bar for rdb_datasets
@@ -144,6 +146,10 @@ module DBnomics
             if !isa(tmp, Union{Nothing, Dict, Tuple})
                error("'filters' must be a Dict, a Tuple or Nothing.")
             end
+        elseif String(s) == "progress_bar_dot"
+            if !isa(tmp, Bool)
+               error("'progress_bar_dot' must be a Bool.")
+            end
         elseif String(s) == "progress_bar_last_updates"
             if !isa(tmp, Bool)
                error("'progress_bar_last_updates' must be a Bool.")
@@ -199,21 +205,23 @@ module DBnomics
         DBnomics.options("metadata", true)
         DBnomics.options("translate_codes", true)
         DBnomics.options("filters", nothing)
-        DBnomics.options("editor_version", 1)
         DBnomics.options("editor_base_url", "https://editor.nomics.world")
+        DBnomics.options("editor_version", 1)
         DBnomics.options("secure", true)
+        DBnomics.options("progress_bar_dot", false)
         DBnomics.options("progress_bar_last_updates", false)
         DBnomics.options("progress_bar_datasets", false)
         DBnomics.options("progress_bar_dimensions", false)
         DBnomics.options("progress_bar_series", false)
+        DBnomics.options("returndf", true)
         DBnomics.options("only_number_series", false)
         DBnomics.options("only_first_two", false)
-        DBnomics.options("returndf", true)
         nothing
     end
 
     # If ProgressMeter is loaded, we use it
     function __init__()
+        @require ProgressMeter="92933f4c-e287-5a05-a399-4b506db050ca" DBnomics.options("progress_bar_dot", true)
         @require ProgressMeter="92933f4c-e287-5a05-a399-4b506db050ca" DBnomics.options("progress_bar_last_updates", true)
         @require ProgressMeter="92933f4c-e287-5a05-a399-4b506db050ca" DBnomics.options("progress_bar_datasets", true)
         @require ProgressMeter="92933f4c-e287-5a05-a399-4b506db050ca" DBnomics.options("progress_bar_dimensions", true)
@@ -225,7 +233,6 @@ module DBnomics
     include("utils.jl")
     include("utils_DataFrames.jl")
     include("dot_rdb.jl")
-    include("rdb_by_api_link.jl")
     include("rdb.jl")
     include("rdb_last_updates.jl")
     include("rdb_providers.jl")
@@ -234,9 +241,21 @@ module DBnomics
     include("rdb_series.jl")
 
     #---------------------------------------------------------------------------
-    # @deprecate rdb_by_api_link(api_link::String) rdb(api_link::Union{String, Nothing})
+    export rdb, rdb_last_updates, rdb_providers, rdb_datasets
+    export rdb_dimensions, rdb_series
 
     #---------------------------------------------------------------------------
-    export rdb_by_api_link, rdb, rdb_last_updates, rdb_providers, rdb_datasets
-    export rdb_dimensions, rdb_series
+    @deprecate rdb_by_api_link(
+        api_link::String;
+        use_readlines::Bool = DBnomics.use_readlines,
+        curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config,
+        filters::Union{Nothing, Dict, Tuple} = DBnomics.filters,
+        kwargs...
+    ) rdb(
+        api_link = api_link,
+        use_readlines = use_readlines,
+        curl_config = curl_config,
+        filters = filters,
+        kwargs...
+    )
 end # module

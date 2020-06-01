@@ -162,10 +162,6 @@ function filter_type(x::Tuple)::String
         n = length(x)
         y = map(filter_ok, x)
         y = sum(y)
-        # if y == n
-        #     res = "tuple"
-        # end
-        # res
         y == n ? "tuple" : res
     catch
         "ko"
@@ -178,12 +174,6 @@ function filter_type(x::Dict)::String
     # When Dict
     test = try
         res = filter_ok(x)
-        # if res
-        #     res = "nottuple"
-        # else
-        #     res = "ko"
-        # end
-        # res
         res ? "nottuple" : "ko"
     catch
         "ko"
@@ -294,7 +284,7 @@ function transform_date_timestamp!(kv::Dict, y::Union{Nothing, Symbol} = nothing
     end
 
     for k in y
-        if isa(kv[k], Array{String, 1}) | isa(kv[k], Array{Union{Missing, String}, 1})
+        if isa(kv[k], Array{String, 1}) || isa(kv[k], Array{Union{Missing, String}, 1})
             x = unique(skipmissing(kv[k]))
             if date_format(x)
                 push!(kv, k => to_date.(kv[k]))
@@ -473,7 +463,7 @@ function get_data(
                 if !DBnomics.secure
                     x = replace(x, Regex("^https") => "http")
                 end
-                if !isa(headers, Nothing) & !isa(body, Nothing)
+                if !isa(headers, Nothing) && !isa(body, Nothing)
                     response = HTTP.post(x, headers, body; curl_conf...)
                 else
                     response = HTTP.get(x; curl_conf...)    
@@ -499,7 +489,7 @@ function get_data(
             end
         end
 
-        if (frun < try_run)
+        if frun < try_run
             get_data(x, userl, frun + 1, headers, body; curl_conf...)
         else
             rethrow(e)
@@ -758,45 +748,48 @@ function additional_info(x::Dict)
     else
         cols = get_geo_colname(x)
         maps = get_geo_names(x, cols)
-        remove_provider!(cols)
-        cols = [
-            [Symbol(agc[1] * "|" * agc[2]), Symbol(agc[1] * "|" * agc[3])]
-            for agc in cols
-        ]
-        # Check coherence
-        if isa(cols, Nothing) || isa(maps, Nothing)
-            cols = maps = nothing
-        else
-            keep = deepcopy(cols)
-            if length(cols) != length(maps) / 2
+
+        if !isa(cols, Nothing) && !isa(maps, Nothing)
+            remove_provider!(cols)
+            cols = [
+                [Symbol(agc[1] * "|" * agc[2]), Symbol(agc[1] * "|" * agc[3])]
+                for agc in cols
+            ]
+            # Check coherence
+            if isa(cols, Nothing) || isa(maps, Nothing)
                 cols = maps = nothing
             else
-                for iaddg in 1:length(cols)
-                    if isa(cols[iaddg][1], Nothing) |
-                    isa(cols[iaddg][2], Nothing)
-                        deleteat!(keep, iaddg)
-                        try
-                            pop!(maps, cols[iaddg][1])
-                        catch
-                        end
-                        try
-                            pop!(maps, cols[iaddg][2])
-                        catch
-                        end
-                    else
-                        if isa(maps[cols[iaddg][1]], Nothing) |
-                        isa(maps[cols[iaddg][2]], Nothing)
+                keep = deepcopy(cols)
+                if length(cols) != length(maps) / 2
+                    cols = maps = nothing
+                else
+                    for iaddg in 1:length(cols)
+                        if isa(cols[iaddg][1], Nothing) |
+                        isa(cols[iaddg][2], Nothing)
                             deleteat!(keep, iaddg)
-                            pop!(maps, cols[iaddg][1])
-                            pop!(maps, cols[iaddg][2])
+                            try
+                                pop!(maps, cols[iaddg][1])
+                            catch
+                            end
+                            try
+                                pop!(maps, cols[iaddg][2])
+                            catch
+                            end
+                        else
+                            if isa(maps[cols[iaddg][1]], Nothing) |
+                            isa(maps[cols[iaddg][2]], Nothing)
+                                deleteat!(keep, iaddg)
+                                pop!(maps, cols[iaddg][1])
+                                pop!(maps, cols[iaddg][2])
+                            end
                         end
                     end
                 end
-            end
-            if length(keep) == 0
-                cols = maps = nothing
-            else
-                cols = keep
+                if length(keep) == 0
+                    cols = maps = nothing
+                else
+                    cols = keep
+                end
             end
         end
     end

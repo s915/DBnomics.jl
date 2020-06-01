@@ -8,17 +8,7 @@ function dot_rdb(
     if isa(curl_config, Nothing)
         curl_config = kwargs
     end
-
-# filter1 = Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "linear"));
-# filter2 = Dict(:code => "x13", :parameters => nothing);
-# filters = (filter1, filter2);
-# api_link = "https://api.db.nomics.world/v22/series?observations=1&series_ids=ECB/EXR/A.AUD.EUR.SP00.A";
-
-filters = nothing;
-# api_link = "https://api.db.nomics.world/v22/series/IMF/IFS?observations=1&dimensions={\"FREQ\":[\"M\"],\"REF_AREA\":[\"AF\",\"AL\",\"DZ\",\"AO\",\"AI\"]}";
-api_link = "https://api.db.nomics.world/v22/series/IMF/IFS?observations=1&dimensions={\"FREQ\":[\"M\"],\"REF_AREA\":[\"AF\",\"AL\",\"DZ\"]}";
-
-
+    
     # Checking 'filters'
     if !isa(filters, Nothing)
         check_filter = filter_type(filters)
@@ -45,17 +35,11 @@ api_link = "https://api.db.nomics.world/v22/series/IMF/IFS?observations=1&dimens
         end
     end
 
-    # api_link = "https://api.db.nomics.world/v22/series/IMF/BOP?limit=1000&offset=0&q=ILPDCB_BP6_USD&observations=1&align_periods=1&dimensions=%7B%22FREQ%22%3A%5B%22A%22%5D%7D"
-    # api_link = "https://api.db.nomics.world/v22/series/FED/H41?limit=100&offset=0&q=&observations=1&align_periods=1&dimensions=%7B%22CATEGORY%22%3A%5B%22LIABCAP%22%5D%7D"
-    # DBdata = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
-    DBdata = get_data(api_link, false, 0, nothing, nothing);
+    DBdata = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
 
-    # api_version::String = DBdata["_meta"]["version"]
-    # num_found::Int64 = DBdata["series"]["num_found"]
-    # limit::Int64 = DBdata["series"]["limit"] 
-    api_version = DBdata["_meta"]["version"]
-    num_found = DBdata["series"]["num_found"]
-    limit = DBdata["series"]["limit"]
+    api_version::String = DBdata["_meta"]["version"]
+    num_found::Int64 = DBdata["series"]["num_found"]
+    limit::Int64 = DBdata["series"]["limit"] 
 
     # Additional informations to translate geo, freq, ...
     additional_geo_column, additional_geo_mapping = additional_info(DBdata)
@@ -63,22 +47,30 @@ api_link = "https://api.db.nomics.world/v22/series/IMF/IFS?observations=1&dimens
     DBdata = DBdata["series"]["docs"]
     DBdata = clean_data(DBdata, true)
 
-    if num_found > limit
-        # iter::UnitRange{Int64} = 1:Int(floor(num_found / limit))
-        iter = 1:Int(floor(num_found / limit))
+    if num_found <= limit
+        if DBnomics.progress_bar_dot
+            p = ProgressMeter.Progress(1, 1, "Downloading data...")
+            ProgressMeter.next!(p)
+        end
+    else
+        iter::UnitRange{Int64} = 1:Int(floor(num_found / limit))
+
+        if DBnomics.progress_bar_dot
+            p = ProgressMeter.Progress(length(iter), 1, "Downloading data...")
+        end
 
         if occursin(r"offset=", api_link)
             api_link = replace(api_link, r"\&offset=[0-9]+" => "")
             api_link = replace(api_link, r"\?offset=[0-9]+" => "")
         end
-        # sep::String = occursin(r"\?", api_link) ? "&" : "?"
-        sep = occursin(r"\?", api_link) ? "&" : "?"
+        sep::String = occursin(r"\?", api_link) ? "&" : "?"
 
         DBdata2 = map(iter) do u
-            # link::String = api_link * sep * "offset=" * string(Int(u * limit))
-            link = api_link * sep * "offset=" * string(Int(u * limit))
-            # tmp_up = get_data(link, use_readlines, 0, nothing, nothing; curl_config...)
-            tmp_up = get_data(link, false, 0, nothing, nothing)
+            link::String = api_link * sep * "offset=" * string(Int(u * limit))
+            tmp_up = get_data(link, use_readlines, 0, nothing, nothing; curl_config...)
+            if DBnomics.progress_bar_dot
+                ProgressMeter.next!(p)
+            end
             tmp_up = tmp_up["series"]["docs"]
             clean_data(tmp_up, true)
         end
@@ -87,6 +79,10 @@ api_link = "https://api.db.nomics.world/v22/series/IMF/IFS?observations=1&dimens
         append!(DBdata, DBdata2)
 
         DBdata2 = nothing
+    end
+
+    if DBnomics.progress_bar_dot
+        ProgressMeter.finish!(p)
     end
 
     if isa(DBdata, Array{Dict{Symbol, Array{T, 1} where T}, 1})
@@ -118,19 +114,12 @@ api_link = "https://api.db.nomics.world/v22/series/IMF/IFS?observations=1&dimens
         end
 
         # Filters are applied by 'series_code'
-        # codes = unique(DBdata[selectop, :series_code])
         codes = unique(DBdata[:series_code])
 
         DBlist = map(codes) do x
-            # tmpdata = filter(row -> row.series_code == x, DBdata)
             tmpdata = select_dict(DBdata, :series_code, x)
 
             # 'series' for the POST request
-            # series = Dict(
-            #     :frequency => unique(tmpdata[selectop, Symbol("@frequency")])[1],
-            #     :period_start_day => tmpdata[selectop, :period],
-            #     :value => tmpdata[selectop, :value]
-            # )
             series = Dict(
                 :frequency => unique(tmpdata[Symbol("@frequency")])[1],
                 :period_start_day => tmpdata[:period],
@@ -153,8 +142,7 @@ api_link = "https://api.db.nomics.world/v22/series/IMF/IFS?observations=1&dimens
             editor_link = DBnomics.editor_base_url * "/api/v" *
               string(DBnomics.editor_version) * "/apply"
 
-            # request = get_data(editor_link, false, 0, headers, body; curl_config...)
-            request = get_data(editor_link, false, 0, headers, body)
+            request = get_data(editor_link, false, 0, headers, body; curl_config...)
             request = request["filter_results"][1]["series"]
             request = clean_data([request], true)
 

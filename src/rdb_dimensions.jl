@@ -118,7 +118,8 @@ function rdb_dimensions(
         
         tmp_dim = map(dataset_code[Symbol(pc)]) do dc
             try
-                api_link::String = api_base_url * "/v" * string(api_version) * "/datasets/" * pc * "/" * dc
+                api_link::String = api_base_url * "/v" * string(api_version) *
+                    "/datasets/" * pc * "/" * dc
                 tmp = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
                 
                 tmp1 = try
