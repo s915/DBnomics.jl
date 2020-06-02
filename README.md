@@ -1,5 +1,5 @@
 <p align="center">
-<img width="400px" src="docs/src/assets/logo.png"/>
+<img width="600px" src="docs/src/assets/logo.png"/>
 </p>
 
 # DBnomics.jl
