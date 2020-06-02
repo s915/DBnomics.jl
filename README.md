@@ -1,4 +1,8 @@
-# DBnomics.jl <img src="docs/src/assets/logo.png" align="right" width="360" />
+<p align="center">
+<img width="400px" src="docs/src/assets/logo.png"/>
+</p>
+
+# DBnomics.jl
 
 ## DBnomics Julia client
 
