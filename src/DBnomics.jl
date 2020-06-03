@@ -71,6 +71,18 @@ module DBnomics
     # Only first two series with rdb_series
     global only_first_two = false
 
+    # Names of the global variables
+    function getoptions()
+        [
+            "api_base_url", "api_version", "curl_config", "editor_base_url",
+            "editor_version", "filters", "http_ok", "metadata", "only_first_two",
+            "only_number_series", "progress_bar_datasets", "progress_bar_dimensions",
+            "progress_bar_dot", "progress_bar_last_updates", "progress_bar_series",
+            "rdb_no_arg", "returndf", "secure", "sleep_run", "timestamp_tz",
+            "translate_codes", "try_run", "use_readlines", "verbose_warning"
+        ]
+    end
+
     # Modify global variables
     function options(s::AbstractString, v::Any)
         s = Symbol(s)
