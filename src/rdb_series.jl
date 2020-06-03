@@ -194,7 +194,7 @@ function rdb_series(
                         tmp_api_link = api_link * sep * "offset=" * string(j * limit)
                         # Fetching data
                         DBlist = get_data(
-                            api_link, use_readlines, 0, nothing, nothing;
+                            tmp_api_link, use_readlines, 0, nothing, nothing;
                             curl_config...
                         )
                         
@@ -228,8 +228,8 @@ function rdb_series(
                         findfirst(isequal(u), DBdata[:series_code])
                         for u in sort(unique(DBdata[:series_code]))
                     ]
-                    push!(DBdata, :series_code => DBdata[:series_code][i_sort_tmp])
-                    push!(DBdata, :series_name => DBdata[:series_name][i_sort_tmp])
+                    push!(DBdata, :series_code => DBdata[:series_code][i_sort])
+                    push!(DBdata, :series_name => DBdata[:series_name][i_sort])
                 end
                 
                 DBdata

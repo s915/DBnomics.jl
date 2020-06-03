@@ -323,6 +323,9 @@ function clean_data(
 )
     x = to_dict.(x)
     x = concatenate_dict(x)
+    if !haskey(x, :value)
+        return nothing
+    end
     if copy_values
         original_values = x[:value]
     end
@@ -879,4 +882,32 @@ function stack_dict(x::Array)
         merge!(vcat, tmp_x, x[id])
     end
     tmp_x
+end
+
+#-------------------------------------------------------------------------------
+# showkeys
+function showkeys(x, level::Int = 0; showall::Bool = false)
+    if isa(x, Dict)
+        ks = sort(string.(keys(x)))
+        if !showall
+            if length(ks) > 10
+                ks = vcat([ks[1:5], "...", ks[end - 4:end]]...)
+            end
+        end
+        for k in ks
+            if haskey(x, k)
+                len = isa(x[k], Dict) ? " (" * string(length(x[k])) * ")" : ""
+            elseif haskey(x, Symbol(k))
+                len = isa(x[Symbol(k)], Dict) ? " (" * string(length(x[Symbol(k)])) * ")" : ""
+            else
+                len = ""
+            end
+            println("\t" ^ level, k, len)
+            if haskey(x, k)
+                showkeys(x[k], level + 1; showall = showall)
+            elseif haskey(x, Symbol(k))
+                showkeys(x[Symbol(k)], level + 1; showall = showall)
+            end
+        end
+    end
 end

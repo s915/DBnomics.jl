@@ -46,6 +46,10 @@ function dot_rdb(
 
     DBdata = DBdata["series"]["docs"]
     DBdata = clean_data(DBdata, true)
+    if isa(DBdata, Nothing)
+        @warn "No data series found."
+        return nothing
+    end
 
     if num_found <= limit
         if DBnomics.progress_bar_dot
