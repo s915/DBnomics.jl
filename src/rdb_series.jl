@@ -71,8 +71,8 @@ julia> DBnomics.options("secure", false);
 ```
 """
 function rdb_series(
-    provider_code::Union{Nothing, String, Array} = nothing,
-    dataset_code::Union{Nothing, String, Array} = nothing;
+    provider_code::Union{Nothing, String, Symbol, Array} = nothing,
+    dataset_code::Union{Nothing, String, Symbol, Array} = nothing;
     dimensions::Union{Dict, NamedTuple, String, Nothing} = nothing,
     query::Union{String, Nothing} = nothing,
     use_readlines::Bool = DBnomics.use_readlines,
@@ -83,15 +83,29 @@ function rdb_series(
     if isa(provider_code, Nothing) && !isa(dataset_code, Nothing)
         error("If you give datasets codes, please give also a provider code.")
     end
+
+    if !isa(provider_code, Nothing) && !isa(dataset_code, Nothing)
+        if !isa(provider_code, String) && !isa(provider_code, Symbol)
+            if length(provider_code) > 1
+                error("If you give datasets codes, please give only one provider code.")
+            end
+        end
+    end
+
+    if isa(provider_code, Nothing) && !isa(dataset_code, Nothing)
+        error("If you give datasets codes, please give also a provider code.")
+    end
     
     if isa(provider_code, Nothing)
-        # All providers
         provider_code = rdb_providers(
             true;
             use_readLines = use_readlines, curl_config = curl_config, kwargs...
         )
-    elseif isa(provider_code, String)
+    elseif isa(provider_code, String) || isa(provider_code, Symbol)
         provider_code = [provider_code]
+    end
+    if !isa(eltype(provider_code), String)
+        provider_code = string.(provider_code)
     end
     
     if isa(dataset_code, Nothing)
@@ -101,7 +115,12 @@ function rdb_series(
         )
         dataset_code = extract_code(dataset_code)
     else
-        dataset_code = isa(dataset_code, String) ? [dataset_code] : dataset_code
+        if isa(dataset_code, String) || isa(dataset_code, Symbol)
+            dataset_code = [dataset_code]
+        end
+        if !isa(eltype(dataset_code), String)
+            dataset_code = string.(dataset_code)
+        end
         dataset_code = Dict(Symbol(provider_code[1]) => dataset_code)
     end
     
@@ -125,7 +144,7 @@ function rdb_series(
     series = map(provider_code) do pc     
         tmp_ser = map(dataset_code[Symbol(pc)]) do dc
             try
-                api_link = api_base_url * "/v" * string(api_version) * "/series/" * pc * "/" * dc
+                api_link::String = api_base_url * "/v" * string(api_version) * "/series/" * pc * "/" * dc
                         
                 if query_not_null
                     api_link = api_link * "?q=" * HTTP.escapeuri(query)
@@ -137,13 +156,13 @@ function rdb_series(
                 end
                 
                 DBlist = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
-                num_found = DBlist["series"]["num_found"]
-                limit = DBlist["series"]["limit"]
+                num_found::Int64 = DBlist["series"]["num_found"]
+                limit::Int64 = DBlist["series"]["limit"]
                 
                 if DBnomics.only_number_series
                     println(
                         "Downloading number of series for " * pc * "(" *
-                            string(length(dataset_code[Symbol(pc)])) * ")/" * dc
+                        string(length(dataset_code[Symbol(pc)])) * ")/" * dc
                     )
                     return Dict(:Number_of_series => num_found)
                 end
@@ -169,8 +188,7 @@ function rdb_series(
                     DBdata0 = deepcopy(DBdata)
                     DBdata = nothing
                     
-                    sequence = 1:Int(floor(num_found / limit))        
-                    
+                    sequence = 1:Int(floor(num_found / limit))
                     if DBnomics.only_first_two
                         sequence = [sequence[1]]
                     end
@@ -187,11 +205,11 @@ function rdb_series(
                         api_link = replace(api_link, r"\&offset=[0-9]+" => "")
                         api_link = replace(api_link, r"\?offset=[0-9]+" => "")
                     end
-                    sep = occursin(r"\?", api_link) ? "&" : "?"
+                    sep::String = occursin(r"\?", api_link) ? "&" : "?"
                     
                     DBdata = map(sequence) do j
                         # Modifying link
-                        tmp_api_link = api_link * sep * "offset=" * string(j * limit)
+                        tmp_api_link::String = api_link * sep * "offset=" * string(j * limit)
                         # Fetching data
                         DBlist = get_data(
                             tmp_api_link, use_readlines, 0, nothing, nothing;
@@ -240,27 +258,19 @@ function rdb_series(
         
         tmp_ser = NamedTuple{Tuple(Symbol.(dataset_code[Symbol(pc)]))}(tmp_ser)
         tmp_ser = NamedTuple_to_Dict(tmp_ser)
-        
-        for k in keys(tmp_ser)
-            if isa(tmp_ser[k], Nothing)
-                pop!(tmp_ser, k)
-            end
-        end
+        remove_nothing!(tmp_ser)
         
         tmp_ser
     end # series
     
     series = NamedTuple{Tuple(Symbol.(provider_code))}(series)
     series = NamedTuple_to_Dict(series)
-    
-    for k in keys(series)
-        if isa(series[k], Nothing)
-            pop!(series, k)
-        end
-    end
+    remove_nothing!(series)
     
     if length(series) <= 0
-        @warn "Error when fetching the series codes."
+        @warn "Error when fetching the series codes. Please check that the " *
+            "provider(s) is (are) in `rdb_providers(true)` and/or the datasets " *
+            "in `rdb_datasets()`."
         return nothing
     end
     

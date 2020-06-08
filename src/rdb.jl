@@ -162,8 +162,8 @@ julia> df1 = rdb("ECB/EXR/A.AUD.EUR.SP00.A", filters = filters);
 ```
 """
 function rdb(
-    provider_code::Union{Array, String, Nothing} = nothing,
-    dataset_code::Union{String, Nothing} = nothing,
+    provider_code::Union{Array, String, Symbol, Nothing} = nothing,
+    dataset_code::Union{String, Symbol, Nothing} = nothing,
     mask_arg::Union{String, Nothing} = nothing;
     ids::Union{Array, String, Nothing} = nothing,
     dimensions::Union{Dict, NamedTuple, String, Nothing} = nothing,
@@ -177,12 +177,11 @@ function rdb(
 )
     # Setting API url
     api_base_url::String = DBnomics.api_base_url
-    
     # Setting API version
     api_version::Int64 = DBnomics.api_version
-    
     # Setting API metadata
     metadata::Bool = DBnomics.metadata
+    metadata_str::String = metadata ? "?" : ("?metadata=" * string(Int64(metadata)) * "&")
     
     api_base_url = api_base_url * "/v" * string(api_version) * "/series"
     
@@ -211,6 +210,9 @@ function rdb(
     api_link_null::Bool = isa(api_link, Nothing)
     api_link_not_null::Bool = !api_link_null
     
+    provider_code = isa(provider_code, Symbol) ? string(provider_code) : provider_code
+    dataset_code = isa(dataset_code, Symbol) ? string(dataset_code) : dataset_code
+
     # provider_code is actually api_link
     if (
         provider_code_not_null && dataset_code_null &&
@@ -285,8 +287,7 @@ function rdb(
         dimensions = to_json_if_dict_namedtuple(dimensions)
         
         link = api_base_url * "/" * provider_code * "/" * dataset_code *
-            (metadata ? "?" : ("?metadata=" * string(Int64(metadata)), "&")) *
-            "&observations=1&dimensions=" * dimensions
+            metadata_str * "&observations=1&dimensions=" * dimensions
         
         return DBnomics.dot_rdb(
             link;
@@ -306,9 +307,7 @@ function rdb(
         end
         
         link = api_base_url * "/" * provider_code * "/" * dataset_code *
-            "/" * mask *
-            (metadata ? "?" : ("?metadata=" * string(Int64(metadata)), "&")) *
-            "&observations=1"
+            "/" * mask * metadata_str * "&observations=1"
         
         return DBnomics.dot_rdb(
             link;
@@ -336,9 +335,7 @@ function rdb(
             error("'ids' is empty.")
         end
         
-        link = api_base_url *
-            (metadata ? "?" : ("?metadata=" * string(Int64(metadata)), "&")) *
-            "&observations=1&series_ids=" *
+        link = api_base_url * metadata_str * "&observations=1&series_ids=" *
             reduce((u, w) -> u * "," * w, ids)
         
         return DBnomics.dot_rdb(
@@ -367,9 +364,7 @@ function rdb(
         end
         
         link = api_base_url * "/" * provider_code * "/" * dataset_code *
-          "?q=" * HTTP.escapeuri(query) *
-          (metadata ? "&" : ("&metadata=" * string(Int64(metadata)), "&")) *
-          "observations=1"
+          metadata_str * "&q=" * HTTP.escapeuri(query) * "observations=1"
         
         return DBnomics.dot_rdb(
             link;

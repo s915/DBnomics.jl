@@ -55,7 +55,6 @@ function rdb_last_updates(
     api_link::String = api_base_url * "/v" * string(api_version) * "/last-updates"
     
     updates = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
-    
     num_found::Int64 = updates["datasets"]["num_found"]
     limit::Int64 = updates["datasets"]["limit"]
     

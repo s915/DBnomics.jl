@@ -56,8 +56,8 @@ julia> DBnomics.options("secure", false);
 ```
 """
 function rdb_dimensions(
-    provider_code::Union{Nothing, String, Array} = nothing,
-    dataset_code::Union{Nothing, String, Array} = nothing;
+    provider_code::Union{Nothing, String, Symbol, Array} = nothing,
+    dataset_code::Union{Nothing, String, Symbol, Array} = nothing;
     use_readlines::Bool = DBnomics.use_readlines,
     curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config,
     simplify::Bool = false,
@@ -68,7 +68,7 @@ function rdb_dimensions(
     end
 
     if !isa(provider_code, Nothing) && !isa(dataset_code, Nothing)
-        if !isa(provider_code, String)
+        if !isa(provider_code, String) && !isa(provider_code, Symbol)
             if length(provider_code) > 1
                 error("If you give datasets codes, please give only one provider code.")
             end
@@ -76,13 +76,15 @@ function rdb_dimensions(
     end
 
     if isa(provider_code, Nothing)
-        # All providers
         provider_code = rdb_providers(
             true;
             use_readLines = use_readlines, curl_config = curl_config, kwargs...
         )
-    elseif isa(provider_code, String)
+    elseif isa(provider_code, String) || isa(provider_code, Symbol)
         provider_code = [provider_code]
+    end
+    if !isa(eltype(provider_code), String)
+        provider_code = string.(provider_code)
     end
 
     if isa(dataset_code, Nothing)
@@ -92,7 +94,12 @@ function rdb_dimensions(
         )
         dataset_code = extract_code(dataset_code)
     else
-        dataset_code = isa(dataset_code, String) ? [dataset_code] : dataset_code
+        if isa(dataset_code, String) || isa(dataset_code, Symbol)
+            dataset_code = [dataset_code]
+        end
+        if !isa(eltype(dataset_code), String)
+            dataset_code = string.(dataset_code)
+        end
         dataset_code = Dict(Symbol(provider_code[1]) => dataset_code)
     end
 
@@ -120,6 +127,7 @@ function rdb_dimensions(
             try
                 api_link::String = api_base_url * "/v" * string(api_version) *
                     "/datasets/" * pc * "/" * dc
+
                 tmp = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
                 
                 tmp1 = try
@@ -202,17 +210,15 @@ function rdb_dimensions(
             if length(dimensions[k]) <= 0
                 pop!(dimensions, k)
             else
-                for l in keys(dimensions[k])
-                    if isa(dimensions[k][l], Nothing)
-                        pop!(dimensions[k], l)
-                    end
-                end
+                remove_nothing!(dimensions[k])
             end
         end
     end
     
     if length(dimensions) <= 0
-        @warn "Error when fetching the datasets codes."
+        @warn "Error when fetching the dimensions. Please check that the " *
+            "provider(s) is (are) in `rdb_providers(true)` and/or the datasets " *
+            "in `rdb_datasets()`."
         return nothing
     end
 

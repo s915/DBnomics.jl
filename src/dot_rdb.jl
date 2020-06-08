@@ -36,7 +36,6 @@ function dot_rdb(
     end
 
     DBdata = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
-
     api_version::String = DBdata["_meta"]["version"]
     num_found::Int64 = DBdata["series"]["num_found"]
     limit::Int64 = DBdata["series"]["limit"] 
@@ -143,8 +142,8 @@ function dot_rdb(
             body = replace(body, "null" => "\"NA\"")
 
             # Editor url
-            editor_link = DBnomics.editor_base_url * "/api/v" *
-              string(DBnomics.editor_version) * "/apply"
+            editor_link::String = DBnomics.editor_base_url * "/api/v" *
+                string(DBnomics.editor_version) * "/apply"
 
             request = get_data(editor_link, false, 0, headers, body; curl_config...)
             request = request["filter_results"][1]["series"]
@@ -209,7 +208,7 @@ function dot_rdb(
         end
         
         # In case of different types, the type of the column 'original_period'
-        # is set to 'character'
+        # is set to 'string'
         type_DBdata_string = isa(DBdata[:original_period], Array{String,1})
         type_DBlist_string = isa(DBlist[:original_period], Array{String,1})
         if type_DBdata_string && !type_DBlist_string

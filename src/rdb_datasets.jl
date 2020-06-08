@@ -50,20 +50,22 @@ julia> DBnomics.options("secure", false);
 ```
 """
 function rdb_datasets(
-    provider_code::Union{Nothing, String, Array} = nothing;
+    provider_code::Union{Nothing, String, Symbol, Array} = nothing;
     use_readlines::Bool = DBnomics.use_readlines,
     curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config,
     simplify::Bool = false,
     kwargs...
 )
     if isa(provider_code, Nothing)
-        # All providers
         provider_code = rdb_providers(
           true;
           use_readLines = use_readlines, curl_config = curl_config, kwargs...
         )
-    elseif isa(provider_code, String)
+    elseif isa(provider_code, String) || isa(provider_code, Symbol)
         provider_code = [provider_code]
+    end
+    if !isa(eltype(provider_code), String)
+        provider_code = string.(provider_code)
     end
     
     if isa(curl_config, Nothing)
@@ -110,15 +112,11 @@ function rdb_datasets(
     
     datasets = NamedTuple{Tuple(Symbol.(provider_code))}(datasets)
     datasets = NamedTuple_to_Dict(datasets)
-    
-    for k in keys(datasets)
-        if isa(datasets[k], Nothing)
-            pop!(datasets, k)
-        end
-    end
+    remove_nothing!(datasets)
     
     if length(datasets) <= 0
-        @warn "Error when fetching the datasets codes."
+        @warn "Error when fetching the datasets codes. Please check that the " *
+            "provider(s) is (are) in `rdb_providers(true)`."
         return nothing
     end
     

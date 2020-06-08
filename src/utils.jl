@@ -119,19 +119,9 @@ filter_true(x::Dict{String, Bool})::Dict{String, Bool} = filter(u -> (last(u) ==
 elt_to_array(x::Dict) = Dict(k => isa(v, Array) ? v : [v] for (k, v) in x)
 elt_to_array(x::NamedTuple) = map(u -> isa(u, Array) ? u : [u], x)
 
-# elt_to_array!
-function elt_to_array!(x::Dict)::Nothing
-    for k in keys(x)
-        if !isa(x[k], Array)
-            push!(x, k => [x[k]])
-        end
-    end
-    nothing
-end
-
 #-------------------------------------------------------------------------------
 # to_json_if_dict_namedtuple
-to_json_if_dict_namedtuple(x::Dict) = JSON.json(elt_to_array!(x))
+to_json_if_dict_namedtuple(x::Dict) = to_json_if_dict_namedtuple(Dict_to_NamedTuple(x))
 to_json_if_dict_namedtuple(x::NamedTuple) = JSON.json(elt_to_array(x))
 to_json_if_dict_namedtuple(x::String) = x
 
@@ -435,6 +425,119 @@ end
 function dict_types(x::Dict)::Nothing
     [println(k, " : ", typeof(v)) for (k, v) in x]
     nothing
+end
+
+#-------------------------------------------------------------------------------
+# showkeys
+function showkeys(x::Dict, level::Int = 0; showall::Bool = false)
+    ks::Array{String, 1} = sort(string.(keys(x)))
+    if !showall
+        if length(ks) > 10
+            ks = vcat([ks[1:5], "...", ks[end - 4:end]]...)
+        end
+    end
+    for k in ks
+        len::String = ""
+        if haskey(x, k)
+            len = isa(x[k], Dict) ? " (" * string(length(x[k])) * ")" : ""
+        elseif haskey(x, Symbol(k))
+            len = isa(x[Symbol(k)], Dict) ? " (" * string(length(x[Symbol(k)])) * ")" : ""
+        end
+        println("\t" ^ level, k, len)
+        if haskey(x, k)
+            showkeys(x[k], level + 1; showall = showall)
+        elseif haskey(x, Symbol(k))
+            showkeys(x[Symbol(k)], level + 1; showall = showall)
+        end
+    end
+end
+
+#-------------------------------------------------------------------------------
+# extract_children
+extract_children(x::Array) = extract_children.(x)
+function extract_children(x::Dict)
+    if "children" in keys(x)
+        extract_children.(x["children"])
+    else
+        x
+    end
+end
+
+#-------------------------------------------------------------------------------
+# extract_dict
+extract_dict(x::Array) = vcat(extract_dict.(x)...)
+extract_dict(x::Dict) = x
+
+#-------------------------------------------------------------------------------
+# stack_dict
+function stack_dict(x::Array)
+    tmp_x = typeof(x[1])()
+    for id in 1:length(x)
+        merge!(vcat, tmp_x, x[id])
+    end
+    tmp_x
+end
+
+#-------------------------------------------------------------------------------
+# additional_info_add
+additional_info_add(x::Dict, cols::Nothing, maps::Nothing) = x
+additional_info_add(x::Dict, cols::Nothing, maps) = x
+additional_info_add(x::Dict, cols, maps::Nothing) = x
+function additional_info_add(x::Dict, cols, maps)
+    for i = 1:length(cols)
+        dc::String = string(cols[i][1])
+        dc = replace(dc, r"\|.*" => "")
+
+        if dc in unique(x[:dataset_code])
+            addcol::String = string(cols[i][2])
+            addcol = replace(addcol, dc * "|" => "")
+            
+            suffix = ""
+            if Symbol(addcol) in ckeys(x)
+                suffix = "_add"
+                newcol = Symbol(addcol * suffix)
+
+                push!(
+                    maps,
+                    Symbol(dc * "|" * string(newcol)) => maps[cols[i][2]]
+                )
+                delete_dict!(maps, cols[i][2])
+                cols[i][2] = Symbol(dc * "|" * string(newcol))
+            end
+
+            ref_col::String = replace(string(cols[i][1]), dc * "|" => "")
+            new_col::String = replace(string(cols[i][2]), dc * "|" => "")
+            n::Int64 = length(x[Symbol(ref_col)])
+            push!(x, Symbol(new_col) => Array{Any}(missing, n))
+            for j in 1:n
+                if x[:dataset_code][j] == dc
+                    if isa(x[Symbol(ref_col)][j], Missing)
+                        x[Symbol(new_col)][j] = missing
+                    else
+                        i_ = findall(
+                            isequal(x[Symbol(ref_col)][j]),
+                            maps[cols[i][1]]
+                        )[1]
+                        x[Symbol(new_col)][j] = maps[cols[i][2]][i_]
+                    end
+                end
+            end
+
+            if suffix != ""
+                old_col::String = replace(new_col, "_add" => "")
+                for j in 1:n
+                    if x[:dataset_code][j] == dc
+                        if isa(x[Symbol(old_col)][j], Missing)
+                            x[Symbol(old_col)][j] = x[Symbol(new_col)][j]
+                        end
+                    end
+                end
+                pop!(x, Symbol(new_col))
+            end
+        end
+    end
+
+    x
 end
 
 #-------------------------------------------------------------------------------
@@ -800,114 +903,19 @@ function additional_info(x::Dict)
 end
 
 #-------------------------------------------------------------------------------
-# additional_info_add
-function additional_info_add(x::Dict, cols, maps)
-    if !isa(cols, Nothing) && !isa(maps, Nothing)
-        for i = 1:length(cols)
-            dc = cols[i][1]
-            dc = replace(string(dc), r"\|.*" => "")
-
-            addcol = cols[i][2]
-            addcol = Symbol(replace(string(addcol), dc * "|" => ""))
-            
-            suffix = ""
-            if Symbol(addcol) in ckeys(x)
-                suffix = "_add"
-                newcol = Symbol(string(addcol) * suffix)
-
-                push!(
-                    maps,
-                    Symbol(dc * "|" * string(newcol)) => maps[cols[i][2]]
-                )
-                delete_dict!(maps, cols[i][2])
-                cols[i][2] = Symbol(dc * "|" * string(newcol))
-            end
-
-            ref_col = replace(string(cols[i][1]), dc * "|" => "")
-            new_col = replace(string(cols[i][2]), dc * "|" => "")
-            n = length(x[Symbol(ref_col)])
-            push!(x, Symbol(new_col) => Array{Any}(missing, n))
-            for j in 1:n
-                if x[:dataset_code][j] == dc
-                    if isa(x[Symbol(ref_col)][j], Missing)
-                        x[Symbol(new_col)][j] = missing
-                    else
-                        i_ = findall(
-                            isequal(x[Symbol(ref_col)][j]),
-                            maps[cols[i][1]]
-                        )[1]
-                        x[Symbol(new_col)][j] = maps[cols[i][2]][i_]
-                    end
+# remove_nothing!
+function remove_nothing!(x::Dict)
+    for k in keys(x)
+        if isa(x[k], Nothing)
+            pop!(x, k)
+        end
+        try
+            if isa(x[k], Dict)
+                if length(x[k]) <= 0
+                    pop!(x, k)
                 end
             end
-
-            if suffix != ""
-                old_col = replace(new_col, "_add" => "")
-                for j in 1:n
-                    if x[:dataset_code][j] == dc
-                        if isa(x[Symbol(old_col)][j], Missing)
-                            x[Symbol(old_col)][j] = x[Symbol(new_col)][j]
-                        end
-                    end
-                end
-                pop!(x, Symbol(new_col))
-            end
-        end
-    end
-
-    x
-end
-
-#-------------------------------------------------------------------------------
-# extract_children
-extract_children(x::Array) = extract_children.(x)
-function extract_children(x::Dict)
-    if "children" in keys(x)
-        extract_children.(x["children"])
-    else
-        x
-    end
-end
-
-#-------------------------------------------------------------------------------
-# extract_dict
-extract_dict(x::Array) = vcat(extract_dict.(x)...)
-extract_dict(x::Dict) = x
-
-#-------------------------------------------------------------------------------
-# stack_dict
-function stack_dict(x::Array)
-    tmp_x = typeof(x[1])()
-    for id in 1:length(x)
-        merge!(vcat, tmp_x, x[id])
-    end
-    tmp_x
-end
-
-#-------------------------------------------------------------------------------
-# showkeys
-function showkeys(x, level::Int = 0; showall::Bool = false)
-    if isa(x, Dict)
-        ks = sort(string.(keys(x)))
-        if !showall
-            if length(ks) > 10
-                ks = vcat([ks[1:5], "...", ks[end - 4:end]]...)
-            end
-        end
-        for k in ks
-            if haskey(x, k)
-                len = isa(x[k], Dict) ? " (" * string(length(x[k])) * ")" : ""
-            elseif haskey(x, Symbol(k))
-                len = isa(x[Symbol(k)], Dict) ? " (" * string(length(x[Symbol(k)])) * ")" : ""
-            else
-                len = ""
-            end
-            println("\t" ^ level, k, len)
-            if haskey(x, k)
-                showkeys(x[k], level + 1; showall = showall)
-            elseif haskey(x, Symbol(k))
-                showkeys(x[Symbol(k)], level + 1; showall = showall)
-            end
+        catch
         end
     end
 end
