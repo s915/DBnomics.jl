@@ -57,7 +57,12 @@ end
 # df_return
 function df_return(x::Dict)
     if DBnomics.returndf
-        DataFrames.DataFrame(x)
+        DF = DataFrames.DataFrame(x)
+        DataFrames.select!(
+            DF,
+            DataFrames.sort(DataFrames.names(DF), by = lowercase)
+        )
+        DF
     else
         x
     end

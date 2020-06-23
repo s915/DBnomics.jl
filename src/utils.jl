@@ -701,7 +701,14 @@ function get_geo_names(x::Dict, colname::Array)
                     Symbol(k * "|" * u[3]) => string.(cvalues(z[1]))
                 )
             catch
-                z = nothing
+                try
+                    z = Dict(
+                        Symbol(k * "|" * u[2]) => [string(u[1]) for u in z[1]],
+                        Symbol(k * "|" * u[3]) => [string(u[2]) for u in z[1]]
+                    )
+                catch
+                    z = nothing
+                end
             end
             z
         end
@@ -730,7 +737,14 @@ function get_geo_names(x::Dict, colname::Array)
                     Symbol(u[1] * "|" * u[3]) => string.(cvalues(z))
                 )
             catch
-                z = nothing
+                try
+                    z = Dict(
+                        Symbol(u[1] * "|" * u[2]) => [string(u[1]) for u in z],
+                        Symbol(u[1] * "|" * u[3]) => [string(u[1]) for u in z]
+                    )
+                catch
+                    z = nothing
+                end
             end
             z
         end
