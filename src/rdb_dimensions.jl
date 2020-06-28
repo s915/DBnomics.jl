@@ -130,11 +130,12 @@ function rdb_dimensions(
 
                 tmp = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
                 
+                dtst::String = "datasets" in ckeys(tmp) ? "datasets" : "dataset"
                 tmp1 = try
-                    tmp["datasets"]["docs"][1]["dimensions_labels"]
+                    tmp[dtst]["docs"][1]["dimensions_labels"]
                 catch
                     try
-                        tmp["datasets"][pc * "/" * dc]["dimensions_labels"]
+                        tmp[dtst][pc * "/" * dc]["dimensions_labels"]
                     catch
                         nothing
                     end
@@ -146,13 +147,27 @@ function rdb_dimensions(
                 else
                     tmp1 = Dict(:A => cvalues(tmp1), :B => ckeys(tmp1))
                     change_type!(tmp1)
+
+                    # Normally column B is in capital letters
+                    ntmp1A::Int64 = length(tmp1[:A])
+                    if ntmp1A > 0
+                        for itmp1 in 1:ntmp1A
+                            if tmp1[:A][itmp1] == tmp1[:B][itmp1]
+                                if tmp1[:A][itmp1] == uppercasefirst(lowercase(tmp1[:A][itmp1]))
+                                    tmp1[:A][itmp1] = uppercase(tmp1[:A][itmp1])
+                                else
+                                    tmp1[:A][itmp1] = uppercasefirst(lowercase(tmp1[:A][itmp1]))
+                                end
+                            end
+                        end
+                    end
                 end
 
                 tmp2 = try
-                    tmp["datasets"]["docs"][1]["dimensions_values_labels"]
+                    tmp[dtst]["docs"][1]["dimensions_values_labels"]
                 catch
                     try
-                        tmp["datasets"][pc * "/" * dc]["dimensions_values_labels"]
+                        tmp[dtst][pc * "/" * dc]["dimensions_values_labels"]
                     catch
                         nothing
                     end

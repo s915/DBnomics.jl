@@ -489,50 +489,53 @@ function additional_info_add(x::Dict, cols, maps)
         dc = replace(dc, r"\|.*" => "")
 
         if dc in unique(x[:dataset_code])
-            addcol::String = string(cols[i][2])
-            addcol = replace(addcol, dc * "|" => "")
-            
-            suffix = ""
-            if Symbol(addcol) in ckeys(x)
-                suffix = "_add"
-                newcol = Symbol(addcol * suffix)
-
-                push!(
-                    maps,
-                    Symbol(dc * "|" * string(newcol)) => maps[cols[i][2]]
-                )
-                delete_dict!(maps, cols[i][2])
-                cols[i][2] = Symbol(dc * "|" * string(newcol))
-            end
-
             ref_col::String = replace(string(cols[i][1]), dc * "|" => "")
-            new_col::String = replace(string(cols[i][2]), dc * "|" => "")
-            n::Int64 = length(x[Symbol(ref_col)])
-            push!(x, Symbol(new_col) => Array{Any}(missing, n))
-            for j in 1:n
-                if x[:dataset_code][j] == dc
-                    if isa(x[Symbol(ref_col)][j], Missing)
-                        x[Symbol(new_col)][j] = missing
-                    else
-                        i_ = findall(
-                            isequal(x[Symbol(ref_col)][j]),
-                            maps[cols[i][1]]
-                        )[1]
-                        x[Symbol(new_col)][j] = maps[cols[i][2]][i_]
-                    end
-                end
-            end
 
-            if suffix != ""
-                old_col::String = replace(new_col, "_add" => "")
+            if Symbol(ref_col) in ckeys(x)
+                addcol::String = string(cols[i][2])
+                addcol = replace(addcol, dc * "|" => "")
+                
+                suffix = ""
+                if Symbol(addcol) in ckeys(x)
+                    suffix = "_add"
+                    newcol = Symbol(addcol * suffix)
+
+                    push!(
+                        maps,
+                        Symbol(dc * "|" * string(newcol)) => maps[cols[i][2]]
+                    )
+                    delete_dict!(maps, cols[i][2])
+                    cols[i][2] = Symbol(dc * "|" * string(newcol))
+                end
+
+                new_col::String = replace(string(cols[i][2]), dc * "|" => "")
+                n::Int64 = length(x[Symbol(ref_col)])
+                push!(x, Symbol(new_col) => Array{Any}(missing, n))
                 for j in 1:n
                     if x[:dataset_code][j] == dc
-                        if isa(x[Symbol(old_col)][j], Missing)
-                            x[Symbol(old_col)][j] = x[Symbol(new_col)][j]
+                        if isa(x[Symbol(ref_col)][j], Missing)
+                            x[Symbol(new_col)][j] = missing
+                        else
+                            i_ = findall(
+                                isequal(x[Symbol(ref_col)][j]),
+                                maps[cols[i][1]]
+                            )[1]
+                            x[Symbol(new_col)][j] = maps[cols[i][2]][i_]
                         end
                     end
                 end
-                pop!(x, Symbol(new_col))
+
+                if suffix != ""
+                    old_col::String = replace(new_col, "_add" => "")
+                    for j in 1:n
+                        if x[:dataset_code][j] == dc
+                            if isa(x[Symbol(old_col)][j], Missing)
+                                x[Symbol(old_col)][j] = x[Symbol(new_col)][j]
+                            end
+                        end
+                    end
+                    pop!(x, Symbol(new_col))
+                end
             end
         end
     end
@@ -657,6 +660,13 @@ function get_geo_colname(x::Dict)
         for (key, value) in subdict
             res_dict = retrieve(subdict[key], r"^dimensions_label[s]*$")[1]
             for (k, v) in res_dict
+                if k == v
+                    if v == uppercasefirst(lowercase(v))
+                        v = uppercase(v)
+                    else
+                        v = uppercasefirst(lowercase(v))
+                    end
+                end
                 push!(output, [key, k ,v])
             end
         end
@@ -672,6 +682,13 @@ function get_geo_colname(x::Dict)
             k = keys_[occursin.(Ref(r"^dimensions_label[s]*$"), keys_)]
             res_dict = subdict[k[1]]
             for (k, v) in res_dict
+                if k == v
+                    if v == uppercasefirst(lowercase(v))
+                        v = uppercase(v)
+                    else
+                        v = uppercasefirst(lowercase(v))
+                    end
+                end
                 push!(output, [subdict["code"], k ,v])
             end
             output = unique(output)
