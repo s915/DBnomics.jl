@@ -955,8 +955,14 @@ end
 # value_to_float!
 function value_to_float!(x::Dict)::Nothing
     if haskey(x, :value)
-        tmpx = pop!(x, :value)
-        push!(x, :value => Float64.(tmpx))
+        if !(isa(x, Array{Float64, 1}) || isa(x, Array{Union{Missing, Float64}, 1}))
+            tmpx = pop!(x, :value)
+            if has_missing(tmpx)
+                push!(x, :value => convert(Array{Union{Missing, Float64}, 1}, tmpx))
+            else
+                push!(x, :value => Float64.(tmpx))
+            end
+        end
     end
     nothing
 end
