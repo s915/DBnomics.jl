@@ -950,3 +950,13 @@ function remove_nothing!(x::Dict)
         end
     end
 end
+
+#-------------------------------------------------------------------------------
+# value_to_float!
+function value_to_float!(x::Dict)::Nothing
+    if haskey(x, :value)
+        tmpx = pop!(x, :value)
+        push!(x, :value => Float64.(tmpx))
+    end
+    nothing
+end

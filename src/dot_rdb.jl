@@ -239,6 +239,7 @@ function dot_rdb(
     DBdata = additional_info_add(DBdata, additional_geo_column, additional_geo_mapping)
 
     change_type!(DBdata, nothing, [:original_value])
+    value_to_float!(DBdata)
 
     df_return(DBdata)
 end
