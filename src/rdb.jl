@@ -364,7 +364,7 @@ function rdb(
         end
         
         link = api_base_url * "/" * provider_code * "/" * dataset_code *
-          metadata_str * "&q=" * HTTP.escapeuri(query) * "observations=1"
+          metadata_str * "&q=" * HTTP.escapeuri(query) * "&observations=1"
         
         return DBnomics.dot_rdb(
             link;
