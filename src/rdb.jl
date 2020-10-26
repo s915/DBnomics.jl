@@ -112,9 +112,9 @@ julia> df4 = rdb("IMF", "BOP", mask = "A.FR.BCA_BP6_EUR+IA_BP6_EUR");
 
 
 ## By query
-julia> df1 = rdb("IMF", "WEO", query = "France current account balance percent");
+julia> df1 = rdb("IMF", "WEO:2019-10", query = "France current account balance percent");
 
-julia> df2 = rdb("IMF", "WEO", query = "current account balance percent");
+julia> df2 = rdb("IMF", "WEO:2019-10", query = "current account balance percent");
 
 
 ## By api_link
@@ -147,13 +147,13 @@ julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN", use_readlines = true);
 ## Apply a filter to the series
 # One filter
 julia> filters = Dict(:code => "interpolate", :parameters => Dict(:frequency => "daily", :method => "spline"));
-julia> df1 = rdb(ids = ["IMF/WEO/ABW.BCA", "IMF/WEO/ABW.BCA_NGDPD"], filters = filters);
+julia> df1 = rdb(ids = ["IMF/WEO:2019-10/ABW.BCA", "IMF/WEO:2019-10/ABW.BCA_NGDPD"], filters = filters);
 
 # For two filters
 julia> filter1 = Dict(:code => "interpolate", :parameters => Dict(:frequency => "quarterly", :method => "spline"));
 julia> filter2 = Dict(:code => "aggregate", :parameters => Dict(:frequency => "annual", :method => "average"));
 julia> filters = (filter1, filter2);
-julia> df1 = rdb(ids = ["IMF/WEO/ABW.BCA", "IMF/WEO/ABW.BCA_NGDPD"], filters = filters);
+julia> df1 = rdb(ids = ["IMF/WEO:2019-10/ABW.BCA", "IMF/WEO:2019-10/ABW.BCA_NGDPD"], filters = filters);
 
 julia> filter1 = Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "linear"));
 julia> filter2 = Dict(:code => "x13", :parameters => nothing);

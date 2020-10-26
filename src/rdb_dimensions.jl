@@ -35,9 +35,9 @@ containing the dimensions of datasets for providers from
 
 # Examples
 ```jldoctest
-julia> rdb_dimensions("IMF", "WEO")
+julia> rdb_dimensions("IMF", "WEO:2019-10")
 
-julia> rdb_dimensions("IMF", "WEO", simplify = true)
+julia> rdb_dimensions("IMF", "WEO:2019-10", simplify = true)
 
 julia> rdb_dimensions("IMF")
 
@@ -45,9 +45,9 @@ julia> rdb_dimensions("IMF")
 julia> using ProgressMeter
 julia> rdb_dimensions()
 
-julia> rdb_dimensions("IMF", "WEO", use_readlines = true)
+julia> rdb_dimensions("IMF", "WEO:2019-10", use_readlines = true)
 
-julia> rdb_dimensions("IMF", "WEO", curl_config = Dict(:proxy => "http://<proxy>:<port>"))
+julia> rdb_dimensions("IMF", "WEO:2019-10", curl_config = Dict(:proxy => "http://<proxy>:<port>"))
 
 # Regarding the functioning of HTTP.jl, you might need to modify another option
 # It will change the url from https:// to http://

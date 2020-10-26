@@ -960,7 +960,23 @@ function value_to_float!(x::Dict)::Nothing
             if has_missing(tmpx)
                 push!(x, :value => convert(Array{Union{Missing, Float64}, 1}, tmpx))
             else
-                push!(x, :value => Float64.(tmpx))
+                push!(x, :value => float.(tmpx))
+            end
+        end
+    end
+    nothing
+end
+
+#-------------------------------------------------------------------------------
+# original_period_to_string!
+function original_period_to_string!(x::Dict)::Nothing
+    if haskey(x, :original_period)
+        if !(isa(x, Array{String, 1}) || isa(x, Array{Union{Missing, String}, 1}))
+            tmpx = pop!(x, :original_period)
+            if has_missing(tmpx)
+                push!(x, :original_period => convert(Array{Union{Missing, String}, 1}, tmpx))
+            else
+                push!(x, :original_period => string.(tmpx))
             end
         end
     end

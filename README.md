@@ -85,11 +85,11 @@ df3 = rdb("WB", "DB", dimensions = (country = ["DZ", "PE"], indicator = ["ENF.CO
 
 Fetch time series with a `query`:
 ```julia
-# Fetch one series from dataset 'WEO by countries' (WEO) of IMF provider:
-df1 = rdb("IMF", "WEO", query = "France current account balance percent");
+# Fetch one series from dataset 'WEO:2019-10 by countries' (WEO:2019-10) of IMF provider:
+df1 = rdb("IMF", "WEO:2019-10", query = "France current account balance percent");
 
-# Fetch series from dataset 'WEO by countries' (WEO) of IMF provider:
-df2 = rdb("IMF", "WEO", query = "current account balance percent");
+# Fetch series from dataset 'WEO:2019-10 by countries' (WEO:2019-10) of IMF provider:
+df2 = rdb("IMF", "WEO:2019-10", query = "current account balance percent");
 ```
 
 Fetch one series from the dataset 'Doing Business' of WB provider with the link:
@@ -119,29 +119,29 @@ df_datasets = rdb_datasets("IMF", simplify = true);
 
 Fetch the possible dimensions of available datasets of a provider
 ```julia
-# Example for the dataset WEO of the IMF:
-df_dimensions = rdb_dimensions("IMF", "WEO");
+# Example for the dataset WEO:2019-10 of the IMF:
+df_dimensions = rdb_dimensions("IMF", "WEO:2019-10");
 ```
 
 In the event that you only request the dimensions for one dataset for one
 provider, if you define `simplify = true`, then the result will be a `Dict` of
 `DataFrame`s not a nested `Dict`.
 ```julia
-df_dimensions = rdb_dimensions("IMF", "WEO", simplify = true);
+df_dimensions = rdb_dimensions("IMF", "WEO:2019-10", simplify = true);
 ```
 
 Fetch the number of series of available datasets of a provider
 ```julia
-# Example for the dataset WEOAGG of the IMF:
-df_series = rdb_series("IMF", "WEOAGG");
+# Example for the dataset WEOAGG:2019-10 of the IMF:
+df_series = rdb_series("IMF", "WEOAGG:2019-10");
 
 # With dimensions
-df_series = rdb_series("IMF", "WEO", dimensions = Dict(Symbol("weo-country") => "AGO");
-df_series = rdb_series("IMF", "WEO", dimensions = Dict(Symbol("weo-subject") => "NGDP_RPCH"), simplify = true);
+df_series = rdb_series("IMF", "WEO:2019-10", dimensions = Dict(Symbol("weo-country") => "AGO");
+df_series = rdb_series("IMF", "WEO:2019-10", dimensions = Dict(Symbol("weo-subject") => "NGDP_RPCH"), simplify = true);
 
 # With a query
-df_series = rdb_series("IMF", "WEO", query = "ARE");
-df_series = rdb_series("IMF", ["WEO", "WEOAGG"], query = "NGDP_RPCH");
+df_series = rdb_series("IMF", "WEO:2019-10", query = "ARE");
+df_series = rdb_series("IMF", ["WEO:2019-10", "WEOAGG:2019-10"], query = "NGDP_RPCH");
 ```
 
 :warning: We ask the user to use this function parsimoniously because there are a huge amount

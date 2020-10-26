@@ -240,6 +240,7 @@ function dot_rdb(
 
     change_type!(DBdata, nothing, [:original_value])
     value_to_float!(DBdata)
+    original_period_to_string!(DBdata)
 
     df_return(DBdata)
 end

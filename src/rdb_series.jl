@@ -47,22 +47,22 @@ containing the series of datasets for providers from
 
 # Examples
 ```jldoctest
-julia> rdb_series("IMF", "WEO")
+julia> rdb_series("IMF", "WEO:2019-10")
 
 # With dimensions
-julia> rdb_series("IMF", "WEO", dimensions = Dict(Symbol("weo-country") => "AGO"))
-julia> rdb_series("IMF", "WEO", dimensions = Dict(Symbol("weo-subject") => "NGDP_RPCH"), simplify = true)
+julia> rdb_series("IMF", "WEO:2019-10", dimensions = Dict(Symbol("weo-country") => "AGO"))
+julia> rdb_series("IMF", "WEO:2019-10", dimensions = Dict(Symbol("weo-subject") => "NGDP_RPCH"), simplify = true)
 
 # With query
-julia> rdb_series("IMF", "WEO", query = "ARE")
-julia> rdb_series("IMF", ["WEO", "WEOAGG"], query = "NGDP_RPCH")
+julia> rdb_series("IMF", "WEO:2019-10", query = "ARE")
+julia> rdb_series("IMF", ["WEO:2019-10", "WEOAGG:2019-10"], query = "NGDP_RPCH")
 
 julia> using ProgressMeter
-julia> rdb_series("IMF", "WEO")
+julia> rdb_series("IMF", "WEO:2019-10")
 
-julia> rdb_series("IMF", "WEO", use_readlines = true)
+julia> rdb_series("IMF", "WEO:2019-10", use_readlines = true)
 
-julia> rdb_series("IMF", "WEO", curl_config = Dict(:proxy => "http://<proxy>:<port>"))
+julia> rdb_series("IMF", "WEO:2019-10", curl_config = Dict(:proxy => "http://<proxy>:<port>"))
 
 # Regarding the functioning of HTTP.jl, you might need to modify another option
 # It will change the url from https:// to http://
