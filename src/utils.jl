@@ -711,28 +711,38 @@ function get_geo_names(x::Dict, colname::Array)
         result = map(colname) do u
             k = replace(u[1], r".*/" => "")
 
-            z = retrieve(x["datasets"][u[1]], Regex("^" * u[2] * "\$"))
+            z = nothing
             try
-                z = Dict(
-                    Symbol(k * "|" * u[2]) => string.(ckeys(z[1])),
-                    Symbol(k * "|" * u[3]) => string.(cvalues(z[1]))
-                )
-            catch
-                try
-                    z = Dict(
-                        Symbol(k * "|" * u[2]) => [string(u[1]) for u in z[1]],
-                        Symbol(k * "|" * u[3]) => [string(u[2]) for u in z[1]]
-                    )
-                catch
-                    z = nothing
-                end
-            end
+                z = retrieve(x["datasets"][u[1]], Regex("^" * u[2] * "\$"))
+			catch
+			end
+			
+			if !isa(z, Nothing)
+				try
+					z = Dict(
+						Symbol(k * "|" * u[2]) => string.(ckeys(z[1])),
+						Symbol(k * "|" * u[3]) => string.(cvalues(z[1]))
+					)
+				catch
+					try
+						z = Dict(
+							Symbol(k * "|" * u[2]) => [string(u[1]) for u in z[1]],
+							Symbol(k * "|" * u[3]) => [string(u[2]) for u in z[1]]
+						)
+					catch
+						z = nothing
+					end
+				end
+			end
+			
             z
         end
         output = Dict()
         for res in result
-            push!(output, ckeys(res)[1] => res[ckeys(res)[1]])
-            push!(output, ckeys(res)[2] => res[ckeys(res)[2]])
+		    if !isa(res, Nothing)
+				push!(output, ckeys(res)[1] => res[ckeys(res)[1]])
+				push!(output, ckeys(res)[2] => res[ckeys(res)[2]])
+			end
         end
         output
     elseif nm == "dataset"
@@ -747,28 +757,38 @@ function get_geo_names(x::Dict, colname::Array)
                 occursin.(Ref(r"^dimensions_value[s]*_label[s]*$"), keys_)
             ]
         
-            z = subdict[k_[1]][u[2]]
-            try
-                z = Dict(
-                    Symbol(u[1] * "|" * u[2]) => string.(ckeys(z)),
-                    Symbol(u[1] * "|" * u[3]) => string.(cvalues(z))
-                )
-            catch
-                try
-                    z = Dict(
-                        Symbol(u[1] * "|" * u[2]) => [string(u[1]) for u in z],
-                        Symbol(u[1] * "|" * u[3]) => [string(u[1]) for u in z]
-                    )
-                catch
-                    z = nothing
-                end
-            end
+		    z = nothing
+		    try
+                z = subdict[k_[1]][u[2]]
+			catch
+			end
+			
+			if !isa(z, Nothing)
+				try
+					z = Dict(
+						Symbol(u[1] * "|" * u[2]) => string.(ckeys(z)),
+						Symbol(u[1] * "|" * u[3]) => string.(cvalues(z))
+					)
+				catch
+					try
+						z = Dict(
+							Symbol(u[1] * "|" * u[2]) => [string(u[1]) for u in z],
+							Symbol(u[1] * "|" * u[3]) => [string(u[1]) for u in z]
+						)
+					catch
+						z = nothing
+					end
+				end
+			end
+			
             z
         end
         output = Dict()
         for res in result
-            push!(output, ckeys(res)[1] => res[ckeys(res)[1]])
-            push!(output, ckeys(res)[2] => res[ckeys(res)[2]])
+		    if !isa(res, Nothing)
+				push!(output, ckeys(res)[1] => res[ckeys(res)[1]])
+				push!(output, ckeys(res)[2] => res[ckeys(res)[2]])
+			end
         end
         output
     else
@@ -896,6 +916,17 @@ function additional_info(x::Dict)
             if isa(cols, Nothing) || isa(maps, Nothing)
                 cols = maps = nothing
             else
+                cmaps = ckeys(maps)
+                for icol in reverse(1:length(cols))
+                    if sum([length(findall(isequal(u), cmaps)) for u in cols[icol]]) != 2
+                        icol1 = cols[icol][1]
+                        icol2 = cols[icol][2]
+                        try pop!(maps, icol1) catch; end
+                        try pop!(maps, icol2) catch; end
+                        try deleteat!(cols, icol) catch; end
+                    end
+                end
+                
                 keep = deepcopy(cols)
                 if length(cols) != length(maps) / 2
                     cols = maps = nothing
