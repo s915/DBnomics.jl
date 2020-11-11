@@ -1,3 +1,7 @@
+<p align="center">
+<img width="600px" src="docs/src/assets/logo.png"/>
+</p>
+
 # DBnomics.jl
 
 ## DBnomics Julia client
@@ -29,7 +33,7 @@ df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN");
 df2 = rdb(ids = ["AMECO/ZUTN/EA19.1.0.0.0.ZUTN", "AMECO/ZUTN/DNK.1.0.0.0.ZUTN"]);
 
 # Fetch two series from different datasets of different providers :
-df3 = rdb(ids = ["AMECO/ZUTN/EA19.1.0.0.0.ZUTN", "IMF/CPI/A.AT.PCPIT_IX"]);
+df3 = rdb(ids = ["AMECO/ZUTN/EA19.1.0.0.0.ZUTN", "IMF/BOP/A.FR.BCA_BP6_EUR"]);
 ```
 
 In the event that you only use the argument `ids`, you can drop it and run :
@@ -39,22 +43,22 @@ df1 = rdb("AMECO/ZUTN/EA19.1.0.0.0.ZUTN");
 
 Fetch time series by `mask` :
 ```julia
-# Fetch one series from dataset 'Consumer Price Index' (CPI) of IMF :
-df1 = rdb("IMF", "CPI", mask = "M.DE.PCPIEC_WT");
+# Fetch one series from dataset 'Balance of Payments' (BOP) of IMF :
+df1 = rdb("IMF", "BOP", mask = "A.FR.BCA_BP6_EUR");
 
-# Fetch two series from dataset 'Consumer Price Index' (CPI) of IMF :
-df2 = rdb("IMF", "CPI", mask = "M.DE+FR.PCPIEC_WT");
+# Fetch two series from dataset 'Balance of Payments' (BOP) of IMF :
+df2 = rdb("IMF", "BOP", mask = "A.FR+ES.BCA_BP6_EUR");
 
-# Fetch all series along one dimension from dataset 'Consumer Price Index' (CPI) of IMF :
-df3 = rdb("IMF", "CPI", mask = "M..PCPIEC_WT");
+# Fetch all series along one dimension from dataset 'Balance of Payments' (BOP) of IMF :
+df3 = rdb("IMF", "BOP", mask = "A..BCA_BP6_EUR");
 
-# Fetch series along multiple dimensions from dataset 'Consumer Price Index' (CPI) of IMF :
-df4 = rdb("IMF", "CPI", mask = "M..PCPIEC_IX+PCPIA_IX");
+# Fetch series along multiple dimensions from dataset 'Balance of Payments' (BOP) of IMF :
+df4 = rdb("IMF", "BOP", mask = "A.FR.BCA_BP6_EUR+IA_BP6_EUR");
 ```
 
 In the event that you only use the arguments `provider_code`, `dataset_code` and `mask`, you can drop the name `mask` and run :
 ```julia
-df1 = rdb("IMF", "CPI", "M.DE.PCPIEC_WT");
+df1 = rdb("IMF", "BOP", "A.FR.BCA_BP6_EUR");
 ```
 
 Fetch time series by `dimensions` :
@@ -63,15 +67,11 @@ Fetch time series by `dimensions` :
 df1 = rdb("AMECO", "ZUTN", dimensions = Dict(:geo => "ea12"));
 # or
 df1 = rdb("AMECO", "ZUTN", dimensions = (geo = "ea12",));
-# or
-df1 = rdb("AMECO", "ZUTN", dimensions = """{"geo": ["ea19"]}""");
 
 # Fetch two values of one dimension from dataset 'Unemployment rate' (ZUTN) of AMECO provider :
 df2 = rdb("AMECO", "ZUTN", dimensions = Dict(:geo => ["ea12", "dnk"]));
 # or
 df2 = rdb("AMECO", "ZUTN", dimensions = (geo = ["ea12", "dnk"],));
-# or
-df2 = rdb("AMECO", "ZUTN", dimensions = """{"geo": ["ea12", "dnk"]}""");
 
 # Fetch several values of several dimensions from dataset 'Doing business' (DB) of World Bank :
 df3 = rdb("WB", "DB", dimensions = Dict(:country => ["DZ", "PE"], :indicator => ["ENF.CONT.COEN.COST.ZS", "IC.REG.COST.PC.FE.ZS"]));
@@ -81,17 +81,68 @@ df3 = rdb("WB", "DB", dimensions = (country = ["DZ", "PE"], indicator = ["ENF.CO
 
 Fetch time series with a `query`:
 ```julia
-# Fetch one series from dataset 'WEO by countries' (WEO) of IMF provider:
-df1 = rdb("IMF", "WEO", query = "France current account balance percent");
+# Fetch one series from dataset 'WEO:2019-10 by countries' (WEO:2019-10) of IMF provider:
+df1 = rdb("IMF", "WEO:2019-10", query = "France current account balance percent");
 
-# Fetch series from dataset 'WEO by countries' (WEO) of IMF provider:
-df2 = rdb("IMF", "WEO", query = "current account balance percent");
+# Fetch series from dataset 'WEO:2019-10 by countries' (WEO:2019-10) of IMF provider:
+df2 = rdb("IMF", "WEO:2019-10", query = "current account balance percent");
 ```
 
-Fetch one series from the dataset 'Doing Business' of WB provider with the link :
+Fetch one series from the dataset 'Doing Business' of WB provider with the link:
 ```julia
-df1 = rdb_by_api_link("https://api.db.nomics.world/v22/series/WB/DB?dimensions=%7B%22country%22%3A%5B%22FR%22%2C%22IT%22%2C%22ES%22%5D%7D&q=IC.REG.PROC.FE.NO&observations=1&format=json&align_periods=1&offset=0&facets=0");
+df1 = rdb(api_link = "https://api.db.nomics.world/v22/series/WB/DB?dimensions=%7B%22country%22%3A%5B%22FR%22%2C%22IT%22%2C%22ES%22%5D%7D&q=IC.REG.PROC.FE.NO&observations=1&format=json&align_periods=1&offset=0&facets=0");
 ```
+
+In the event that you only use the argument `api_link`, you can drop the name and run:
+```julia
+df1 = rdb("https://api.db.nomics.world/v22/series/WB/DB?dimensions=%7B%22country%22%3A%5B%22FR%22%2C%22IT%22%2C%22ES%22%5D%7D&q=IC.REG.PROC.FE.NO&observations=1&format=json&align_periods=1&offset=0&facets=0");
+```
+
+Fetch the available datasets of a provider
+```julia
+# Example with the IMF datasets:
+df_datasets = rdb_datasets("IMF");
+
+# Example with the IMF and BDF datasets:
+df_datasets = rdb_datasets(["IMF", "BDF"]);
+```
+
+In the event that you only request the datasets for one provider, if you define
+`simplify = true`, then the result will be a `DataFrame` not a `Dict`.
+```julia
+df_datasets = rdb_datasets("IMF", simplify = true);
+```
+
+Fetch the possible dimensions of available datasets of a provider
+```julia
+# Example for the dataset WEO:2019-10 of the IMF:
+df_dimensions = rdb_dimensions("IMF", "WEO:2019-10");
+```
+
+In the event that you only request the dimensions for one dataset for one
+provider, if you define `simplify = true`, then the result will be a `Dict` of
+`DataFrame`s not a nested `Dict`.
+```julia
+df_dimensions = rdb_dimensions("IMF", "WEO:2019-10", simplify = true);
+```
+
+Fetch the number of series of available datasets of a provider
+```julia
+# Example for the dataset WEOAGG:2019-10 of the IMF:
+df_series = rdb_series("IMF", "WEOAGG:2019-10");
+
+# With dimensions
+df_series = rdb_series("IMF", "WEO:2019-10", dimensions = Dict(Symbol("weo-country") => "AGO"));
+df_series = rdb_series("IMF", "WEO:2019-10", dimensions = Dict(Symbol("weo-subject") => "NGDP_RPCH"), simplify = true);
+
+# With a query
+df_series = rdb_series("IMF", "WEO:2019-10", query = "ARE");
+df_series = rdb_series("IMF", ["WEO:2019-10", "WEOAGG:2019-10"], query = "NGDP_RPCH");
+```
+
+:warning: We ask the user to use this function parsimoniously because there are a huge amount
+of series per dataset. Please only fetch for one dataset if you need it or
+visit the website [https://db.nomics.world](https://db.nomics.world).  
 
 ## Proxy configuration
 When using the functions `rdb` or `rdb_...`, if you come across an error concerning your internet connection, you can get round this situation by :
@@ -197,12 +248,12 @@ using TimeSeries
 
 function to_namedtuples(x::DataFrames.DataFrame)
     nm = names(x)
-    try
-        vl = [x[!, col] for col in names(x)]
+    vl = try
+        [x[!, col] for col in names(x)]
     catch
-        vl = [x[:, col] for col in names(x)]
+        [x[:, col] for col in names(x)]
     end
-    nm = tuple(nm...)
+    nm = tuple(Symbol.(nm)...)
     vl = tuple(vl...)
 
     NamedTuple{nm}(vl)
@@ -218,26 +269,27 @@ function to_timeseries(
     x
 end
 
-rdb("IMF", "CPI", mask = "M.DE+FR.PCPIEC_WT")
-#> 580×17 DataFrame. Omitted printing of 12 columns
-#> │ Row │ @frequency │ dataset_code │ dataset_name               │ FREQ   │ Frequency │
-#> │     │ String     │ String       │ String                     │ String │ String    │
-#> ├─────┼────────────┼──────────────┼────────────────────────────┼────────┼───────────┼
-#> │ 1   │ monthly    │ CPI          │ Consumer Price Index (CPI) │ M      │ Monthly   │
-#> │ 2   │ monthly    │ CPI          │ Consumer Price Index (CPI) │ M      │ Monthly   │
-#> │ ... │ ...        │ ...          │ ...                        │ ...    │ ...       │
-#> │ 579 │ monthly    │ CPI          │ Consumer Price Index (CPI) │ M      │ Monthly   │
-#> │ 580 │ monthly    │ CPI          │ Consumer Price Index (CPI) │ M      │ Monthly   │
+rdb("IMF", "BOP", mask = "A.FR+ES.BCA_BP6_EUR")
+#> 162×18 DataFrame. Omitted printing of 12 columns
+#> │ Row │ @frequency │ FREQ   │ Frequency │ INDICATOR   │ Indicator                          │ REF_AREA │
+#> │     │ String     │ String │ String    │ String      │ String                             │ String   │
+#> ├─────┼────────────┼────────┼───────────┼─────────────┼────────────────────────────────────┼──────────┤
+#> │ 1   │ annual     │ A      │ Annual    │ BCA_BP6_EUR │ Current Account, Total, Net, Euros │ ES       │
+#> │ 2   │ annual     │ A      │ Annual    │ BCA_BP6_EUR │ Current Account, Total, Net, Euros │ ES       │
+#> │ ... │ ...        │ ...    │ ...       │ ...         │ ...                                │ ...      │
+#> │ 161 │ annual     │ A      │ Annual    │ BCA_BP6_EUR │ Current Account, Total, Net, Euros │ FR       │
+#> │ 162 │ annual     │ A      │ Annual    │ BCA_BP6_EUR │ Current Account, Total, Net, Euros │ FR       │
 
-to_timeseries(rdb("IMF", "CPI", mask = "M.DE+FR.PCPIEC_WT"))
-#> 296×2 TimeArray{Union{Missing, Float64},2,Date,Array{Union{Missing, Float64},2}} 1995-01-01 to 2019-08-01
-#> │            │ M.DE.PCPIEC_WT │ M.FR.PCPIEC_WT │
-#> ├────────────┼────────────────┼────────────────┤
-#> │ 1995-01-01 │ missing        │ 20.0           │
-#> │ 1995-02-01 │ missing        │ 20.0           │
-#> │ ...        │ ...            │ ...            │
-#> │ 2019-07-01 │ 30.1           │ 25.8           │
-#> │ 2019-08-01 │ 30.1           │ 25.8           │
+to_timeseries(rdb("IMF", "BOP", mask = "A.FR+ES.BCA_BP6_EUR"))
+#> 81×2 TimeArray{Union{Missing, Float64},2,Date,Array{Union{Missing, Float64},2}} 1940-01-01 to 2020-01-01
+#> │            │ A.ES.BCA_BP6_EUR │ A.FR.BCA_BP6_EUR │
+#> ├────────────┼──────────────────┼──────────────────┤
+#> │ 1940-01-01 │ missing          │ missing          │
+#> │ 1941-01-01 │ missing          │ missing          │
+#> │ 1942-01-01 │ missing          │ missing          │
+#> │ ...        │ ...              │ ...              │
+#> │ 2019-01-01 │ 24899.0          │ -16239.4         │
+#> │ 2020-01-01 │ missing          │ missing          │
 ```
 
 ## P.S.

@@ -1,6 +1,7 @@
 DataFrames
+DataStructures
 Dates
 HTTP
 JSON
-Pkg
+Requires
 TimeZones

@@ -1,6 +1,11 @@
-# Version 0.2.1
+# Version 0.3.0
 
-* New argument 'query' for function `rdb()`.
+* New argument 'query' and 'api_link' for function `rdb()`.
+* `rdb_by_api_link()` is deprecated.
+* New function `rdb_datasets()` to request the available datasets of the providers.
+* New function `rdb_dimensions()` to request the list of the dimensions of the available datasets of the providers.
+* New function `rdb_series()` to request the list of the series of the available datasets of the providers.
+* New internal function `dot_rdb()`.
 
 # Version 0.2.0
 

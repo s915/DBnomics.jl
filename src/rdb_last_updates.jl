@@ -46,41 +46,53 @@ function rdb_last_updates(
     curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config,
     kwargs...
 )
-    api_base_url = DBnomics.api_base_url
-    api_version = DBnomics.api_version
-
-    api_link = api_base_url * "/v" * string(api_version) * "/last-updates"
-
     if isa(curl_config, Nothing)
         curl_config = kwargs
     end
-
+    
+    api_base_url::String = DBnomics.api_base_url
+    api_version::Int64 = DBnomics.api_version
+    api_link::String = api_base_url * "/v" * string(api_version) * "/last-updates"
+    
     updates = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
-
-    num_found = updates["datasets"]["num_found"]
-    limit = updates["datasets"]["limit"]
-
-    iter = 0
+    num_found::Int64 = updates["datasets"]["num_found"]
+    limit::Int64 = updates["datasets"]["limit"]
+    
+    iter::UnitRange{Int64} = 0:0
     if all_updates
         iter = 0:Int(floor(num_found / limit))
     end
-
+    
+    if DBnomics.progress_bar_last_updates
+        p = ProgressMeter.Progress(length(iter), 1, "Downloading updates...")
+    end
+    
     updates = map(iter) do u
         api_link = api_base_url * "/v" * string(api_version) *
             "/last-updates?datasets.offset=" * string(Int(u * limit))
+                
         tmp_up = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
         tmp_up = tmp_up["datasets"]["docs"]
-        tmp_up = to_dataframe.(tmp_up)
-        tmp_up = concatenate_data(tmp_up)
+        tmp_up = to_dict.(tmp_up)
+        tmp_up = concatenate_dict(tmp_up)
         change_type!(tmp_up)
         transform_date_timestamp!(tmp_up)
+        
+        if DBnomics.progress_bar_last_updates
+            ProgressMeter.next!(p)
+        end
+        
         tmp_up
     end
-
-    if isa(updates, Array{DataFrame, 1})
-        updates = concatenate_data(updates)
+    
+    if DBnomics.progress_bar_last_updates
+        ProgressMeter.finish!(p)
+    end
+    
+    if isa(updates, Array)
+        updates = concatenate_dict(updates)
         change_type!(updates)
     end
-
-    updates
+    
+    df_return(updates)
 end

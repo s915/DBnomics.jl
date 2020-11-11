@@ -7,7 +7,7 @@
     )
 
 `rdb_providers` downloads the list of providers from
-[DBnomics](https://db.nomics.world/)
+[DBnomics](https://db.nomics.world/).
 
 By default, the function returns a `DataFrame`
 containing the list of providers from
@@ -26,13 +26,13 @@ the region, the website, etc.
 
 # Examples
 ```jldoctest
-julia> rdb_providers();
+julia> rdb_providers()
 
-julia> rdb_providers(true);
+julia> rdb_providers(true)
 
-julia> rdb_providers(use_readlines = true);
+julia> rdb_providers(use_readlines = true)
 
-julia> rdb_providers(curl_config = Dict(:proxy => "http://<proxy>:<port>"));
+julia> rdb_providers(curl_config = Dict(:proxy => "http://<proxy>:<port>"))
 
 # Regarding the functioning of HTTP.jl, you might need to modify another option
 # It will change the url from https:// to http://
@@ -46,26 +46,25 @@ function rdb_providers(
     curl_config::Union{Nothing, Dict, NamedTuple} = DBnomics.curl_config,
     kwargs...
 )
-    api_base_url = DBnomics.api_base_url
-    api_version = DBnomics.api_version
-
-    api_link = api_base_url * "/v" * string(api_version) * "/providers"
-
     if isa(curl_config, Nothing)
         curl_config = kwargs
     end
-
+    
+    api_base_url::String = DBnomics.api_base_url
+    api_version::Int64 = DBnomics.api_version
+    api_link::String = api_base_url * "/v" * string(api_version) * "/providers"
+    
     providers = get_data(api_link, use_readlines, 0, nothing, nothing; curl_config...)
     providers = providers["providers"]["docs"]
-    providers = to_dataframe.(providers)
-    providers = concatenate_data(providers)
+    providers = to_dict.(providers)
+    providers = concatenate_dict(providers)
     change_type!(providers)
     transform_date_timestamp!(providers)
-
+    
     if code
-        providers = providers[selectop, :code]
-        providers = sort(providers)
+        providers = sort(providers[:code])
+        return providers
     end
-
-    providers
+    
+    df_return(providers)
 end
