@@ -80,22 +80,15 @@ julia> df3 = rdb(ids = ["AMECO/ZUTN/EA19.1.0.0.0.ZUTN", "IMF/BOP/A.FR.BCA_BP6_EU
 julia> df1 = rdb("AMECO", "ZUTN", dimensions = Dict(:geo => "ea12"));
 # or
 julia> df1 = rdb("AMECO", "ZUTN", dimensions = (geo = "ea12",));
-# or
-julia> df1 = rdb("AMECO", "ZUTN", dimensions = \"""{"geo": ["ea12"]}\""");
 
 julia> df2 = rdb("AMECO", "ZUTN", dimensions = Dict(:geo => ["ea12", "dnk"]));
 # or
 julia> df2 = rdb("AMECO", "ZUTN", dimensions = (geo = ["ea12", "dnk"],));
-# or
-julia> df2 = rdb("AMECO", "ZUTN", dimensions = \"""{"geo": ["ea12", "dnk"]}\""");
 
 julia> dim = Dict(:country => ["DZ", "PE"], :indicator => ["ENF.CONT.COEN.COST.ZS", "IC.REG.COST.PC.FE.ZS"]);
 julia> df3 = rdb("WB", "DB", dimensions = dim);
 # or
 julia> dim = (country = ["DZ", "PE"], indicator = ["ENF.CONT.COEN.COST.ZS", "IC.REG.COST.PC.FE.ZS"]);
-julia> df3 = rdb("WB", "DB", dimensions = dim);
-# or
-julia> dim = \"""{"country": ["DZ", "PE"], "indicator": ["ENF.CONT.COEN.COST.ZS", "IC.REG.COST.PC.FE.ZS"]}\""";
 julia> df3 = rdb("WB", "DB", dimensions = dim);
 
 
@@ -147,13 +140,13 @@ julia> df1 = rdb(ids = "AMECO/ZUTN/EA19.1.0.0.0.ZUTN", use_readlines = true);
 ## Apply a filter to the series
 # One filter
 julia> filters = Dict(:code => "interpolate", :parameters => Dict(:frequency => "daily", :method => "spline"));
-julia> df1 = rdb(ids = ["IMF/WEO:2019-10/ABW.BCA", "IMF/WEO:2019-10/ABW.BCA_NGDPD"], filters = filters);
+julia> df1 = rdb(ids = ["IMF/WEO:2019-10/ABW.BCA.us_dollars", "IMF/WEO:2019-10/ABW.NGDPD.us_dollars"], filters = filters);
 
 # For two filters
 julia> filter1 = Dict(:code => "interpolate", :parameters => Dict(:frequency => "quarterly", :method => "spline"));
 julia> filter2 = Dict(:code => "aggregate", :parameters => Dict(:frequency => "annual", :method => "average"));
 julia> filters = (filter1, filter2);
-julia> df1 = rdb(ids = ["IMF/WEO:2019-10/ABW.BCA", "IMF/WEO:2019-10/ABW.BCA_NGDPD"], filters = filters);
+julia> df1 = rdb(ids = ["IMF/WEO:2019-10/ABW.BCA.us_dollars", "IMF/WEO:2019-10/ABW.NGDPD.us_dollars"], filters = filters);
 
 julia> filter1 = Dict(:code => "interpolate", :parameters => Dict(:frequency => "monthly", :method => "linear"));
 julia> filter2 = Dict(:code => "x13", :parameters => nothing);

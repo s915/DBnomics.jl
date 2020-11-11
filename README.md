@@ -67,15 +67,11 @@ Fetch time series by `dimensions` :
 df1 = rdb("AMECO", "ZUTN", dimensions = Dict(:geo => "ea12"));
 # or
 df1 = rdb("AMECO", "ZUTN", dimensions = (geo = "ea12",));
-# or
-df1 = rdb("AMECO", "ZUTN", dimensions = """{"geo": ["ea12"]}""");
 
 # Fetch two values of one dimension from dataset 'Unemployment rate' (ZUTN) of AMECO provider :
 df2 = rdb("AMECO", "ZUTN", dimensions = Dict(:geo => ["ea12", "dnk"]));
 # or
 df2 = rdb("AMECO", "ZUTN", dimensions = (geo = ["ea12", "dnk"],));
-# or
-df2 = rdb("AMECO", "ZUTN", dimensions = """{"geo": ["ea12", "dnk"]}""");
 
 # Fetch several values of several dimensions from dataset 'Doing business' (DB) of World Bank :
 df3 = rdb("WB", "DB", dimensions = Dict(:country => ["DZ", "PE"], :indicator => ["ENF.CONT.COEN.COST.ZS", "IC.REG.COST.PC.FE.ZS"]));
@@ -136,7 +132,7 @@ Fetch the number of series of available datasets of a provider
 df_series = rdb_series("IMF", "WEOAGG:2019-10");
 
 # With dimensions
-df_series = rdb_series("IMF", "WEO:2019-10", dimensions = Dict(Symbol("weo-country") => "AGO");
+df_series = rdb_series("IMF", "WEO:2019-10", dimensions = Dict(Symbol("weo-country") => "AGO"));
 df_series = rdb_series("IMF", "WEO:2019-10", dimensions = Dict(Symbol("weo-subject") => "NGDP_RPCH"), simplify = true);
 
 # With a query
@@ -252,12 +248,12 @@ using TimeSeries
 
 function to_namedtuples(x::DataFrames.DataFrame)
     nm = names(x)
-    try
-        vl = [x[!, col] for col in names(x)]
+    vl = try
+        [x[!, col] for col in names(x)]
     catch
-        vl = [x[:, col] for col in names(x)]
+        [x[:, col] for col in names(x)]
     end
-    nm = tuple(nm...)
+    nm = tuple(Symbol.(nm)...)
     vl = tuple(vl...)
 
     NamedTuple{nm}(vl)
