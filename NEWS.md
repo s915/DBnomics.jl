@@ -1,3 +1,7 @@
+# Version 0.3.1
+
+* Change the compat entry for the DataFrames package to 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.20, 0.21, 0.22, 1.0, 1.1.
+
 # Version 0.3.0
 
 * New argument 'query' and 'api_link' for function `rdb()`.
