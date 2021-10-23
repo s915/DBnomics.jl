@@ -1,6 +1,6 @@
 # Version 0.3.2
 
-* Modification of the regular expression for float values in the function `value_to_float!()`. From `Ref(r"^[0-9]*[[:blank:]]*[0-9]+\.*[0-9]*e*[0-9]*$")` to `Ref(r"^[0-9]*[[:blank:]]*[0-9]+\.*[0-9]*$")` (@tlorans, issue "Error with value_to_float! function #11").
+* Modification of the regular expression for the float values in the function `value_to_float!()`. From `Ref(r"^[0-9]*[[:blank:]]*[0-9]+\.*[0-9]*$")` to `Ref(r"^[0-9]*[[:blank:]]*[0-9]+\.*[0-9]*e*[0-9]*$")` (@tlorans, issue "Error with value_to_float! function #11").
 * Add a compat entry for the DataFrames package : 1.2.
 
 # Version 0.3.1
