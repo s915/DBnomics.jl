@@ -134,7 +134,7 @@ has_missing(x::Any)::Bool = isa(x, Missing)
 #-------------------------------------------------------------------------------
 # has_numeric_NA
 function has_numeric_NA(x)::Bool
-    ref_num::Base.RefValue{Regex} = Ref(r"^[0-9]*[[:blank:]]*[0-9]+\.*[0-9]*$")
+    ref_num::Base.RefValue{Regex} = Ref(r"^[0-9]*[[:blank:]]*[0-9]+\.*[0-9]*e*[0-9]*$")
     ref_NA::Base.RefValue{Regex} = Ref(r"^NA$")
     try
         tmp_x = trim(string.(x))
